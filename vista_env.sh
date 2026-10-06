@@ -18,3 +18,9 @@ export WARP_CACHE_PATH=/scratch/11138/pranavbelligundu/.warp_cache
 export HF_HOME=/scratch/11138/pranavbelligundu/.hf_cache
 # $WORK and $SCRATCH are different filesystems, so uv cannot hardlink.
 export UV_LINK_MODE=copy
+
+# Login nodes cap per-user threads; uv sizes its thread pool to the core count and
+# panics ("failed to initialize global rayon pool ... WouldBlock"). Cap it there only.
+case "$(hostname -s)" in
+  login*) export RAYON_NUM_THREADS=4 UV_CONCURRENT_INSTALLS=4 UV_CONCURRENT_DOWNLOADS=8 UV_CONCURRENT_BUILDS=2 ;;
+esac
