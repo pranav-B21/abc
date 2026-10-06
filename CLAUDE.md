@@ -266,6 +266,15 @@ policy has no published reference, and it needs the DINOv3 weights.
 
 ## SLURM / TACC rules
 
+- **TACC's `sbatch` prints its welcome banner to stdout even with `--parsable`**, so
+  `jid=$(sbatch --parsable x.sh)` captures the banner and a following `--dependency=afterok:$jid`
+  fails with `unrecognized option '-----…'`. Use `jid=$(sbatch --parsable x.sh | tail -1)`.
+  Chaining the repro finetune into its eval:
+  ```bash
+  jid=$(sbatch --parsable scripts/vista/sbatch_repro_finetune.sh | tail -1)
+  RUN_DIR=$SCRATCH/abc_runs/repro_sim_put_the_plastic_bottles_in_the_bin_recipe \
+    TASK=sim_put_the_plastic_bottles_in_the_bin sbatch --dependency=afterok:$jid scripts/vista/sbatch_eval_run.sh
+  ```
 - **Submit `sbatch` from a login node.** It's disabled on compute nodes. Downloads (`prepare.py`)
   are fine on login nodes. Anything that touches CUDA needs a compute node (`idev` or `sbatch`).
 - **Storage:** code on `$WORK` (this repo), data and checkpoints on `$SCRATCH`, nothing large in
