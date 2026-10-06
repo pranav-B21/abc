@@ -12,7 +12,11 @@ Cloning with Open Data, Training, and Evaluation*, arXiv 2606.27375): the ABC-Di
 bimanual (YAM arms) behavior-cloning policies, plus `abc_sim`, a MuJoCo / MuJoCo-Warp simulator
 with a scored task catalogue.
 
-**Project goal (from Max):** use ABC's dataset and simulator as the evaluation environment.
+**Current step (Max, 2026-10-06): start with the sim data only.** Train a diffusion policy on ABC's
+sim data and check that it reproduces the paper's published sim success rates. Everything below
+comes after that check. Jobs: `scripts/vista/` (see "Vista job scripts").
+
+**Longer-term goal (from Max):** use ABC's dataset and simulator as the evaluation environment.
 RoboTwin was the original plan, but its SAPIEN sim needs RTX GPUs (x86 only), and those are scarce
 on TACC. ABC's sim runs on GH200s.
 
@@ -98,6 +102,7 @@ mujoco `3.8.1`, warp-lang `1.13.0` (it detects the GH200 as `sm_90`), mujoco-war
 |---|---|---|---|
 | `bottles_75k.pt`: 75k-step bottles-only DiT policy (vision backbone and norm stats included) | `$ABC_CACHE/` | 8.1 GB | `prepare.py --checkpoint` |
 | `norm_stats.json`, bottles preview episodes (`train_real/`, `val_real/`, `train_sim/`, `val_sim/`) | `$ABC_CACHE/` | ~160 MB | same |
+| Released per-task finetunes (model-only, sha256-verified): `sim_put_the_plastic_bottles_in_the_bin/20000.pt`, `sim_load_the_plates_into_the_dish_rack/20000.pt`, `pour/25000.pt` (`put_relative/25000.pt` is fetched by the baseline job if missing) | `$ABC_CACHE/finetuned_sim/<task>/` | 8.1 GB each | `prepare.py --sim-checkpoint <task>` |
 | All 37 sim asset packages (meshes, textures, MJCF) | `abc_sim/models/assets/` (gitignored, on `$WORK`) | 1.6 GB | `prepare.py --sim` |
 
 **Not yet downloaded:**
@@ -126,11 +131,23 @@ It ran in about 2.5 min wall-clock (the first run also compiles MJWarp kernels i
 `success=False` is expected, since two chunks are too short to finish the task. A decoded frame
 shows all three cameras (top, left, right) rendering correctly.
 
+**Training works on one GH200** (same node). This was a 300-step finetune of `bottles_75k.pt` on
+the preview data, run as `torchrun --standalone --nproc-per-node 1 train.py --load-pretrained
+--pretrained-ckpt-name bottles_75k.pt`. Results:
+- It ran at **2.9–3.0 steps/s** at batch 90, which matches upstream's per-GPU rate on H100.
+- Peak memory was **72.6 GiB** of 96 GB.
+- Loss went 0.046 → 0.019.
+- `torch.compile` takes about 1.5 min before the first step.
+
+Log: `$SCRATCH/abc_runs/smoke_train.log`. Wall-clock math: 25k steps ≈ 2.4 h, and 75k ≈ 7 h, per
+GPU-run.
+
 **Not yet verified on Vista:**
-- The default `--fast-inference` (bf16, torch.compile and CUDA graphs).
+- The default `--fast-inference` (bf16, torch.compile and CUDA graphs). The eval scripts fall
+  back to `--no-fast-inference` if it fails.
 - `--parallel-worlds` batched MJWarp eval.
-- Any `train.py` run.
-- Multi-node.
+- Multi-node `torchrun` (c10d rendezvous across 2 Vista nodes). `sbatch_repro_finetune.sh` is
+  the first use.
 
 Treat each one as unknown until it has run here.
 
@@ -221,6 +238,31 @@ from the frame counts, not in episodes, because episode lengths vary a lot by ta
 
 `viz_policy.py` and `viz_episode.py` serve a viser page on `--port 8080` on the compute node. From a
 laptop, tunnel through the login node, e.g. `ssh -L 8080:<compute-node>:8080 <user>@vista.tacc.utexas.edu`.
+
+## Vista job scripts (`scripts/vista/`)
+
+Submit all of these **from a login node, from the repo root**. Logs go to
+`$SCRATCH/abc_runs/*_<jobid>.log`. Each job is idempotent: re-submitting skips finished evals
+and resumes training from `last.pt`.
+
+| Script | What it does | Resources |
+|---|---|---|
+| `sbatch_baseline_eval.sh` | **Step 0.** Evaluates the *released* per-task finetunes (bottles@20k, dishrack@20k, pour@25k, put_relative@25k) under the published protocol: 20 worlds × seeds 20260511/20260512, default RTC, 236 chunks, sequential CPU-MuJoCo, trained prompt. Ends with a table against the published numbers. `TASKS=`, `NUM_WORLDS=` override. | 1 node, 8 h |
+| `sbatch_repro_finetune.sh` | **Max's reproduction.** Finetunes the 200k parent on one task's sim data with the published recipe: 25k steps, 90/GPU × **2 GPUs = 2 nodes**, prefix 8, ckpt every 5k. Downloads data and parent into `$SCRATCH/abc_ft/<task>/`. Writes to `$SCRATCH/abc_runs/repro_<task>_<tag>/`. `TASK=` (default `sim_put_the_plastic_bottles_in_the_bin`), `TAG=`, `TRAIN_STEPS=`. | 2 nodes, 12 h |
+| `sbatch_eval_run.sh` | Evaluates every `<step>.pt` of a run (`RUN_DIR=`, `TASK=`) under the same protocol, into `$RUN_DIR/eval/`. | 1 node, 12 h |
+| `log_eval_wandb.py` | Pushes eval results to wandb, since `eval_policy.py` has no wandb hook. Reads `<label>[_step<N>]_seed<S>/summary.json` dirs and logs tables, success-rate-vs-`train_step` curves and rollout videos. The eval jobs call it at the end. | CPU |
+
+**wandb:** project **`abc-vista`**, under the entity `pranavbelligundu-the-university-of-texas-at-austin`.
+This account is already logged in through `~/.netrc`. Training logs loss, LR and val metrics with
+`--log-wandb`. The repro job sets `WANDB_NAME`/`WANDB_RUN_GROUP`, and sets
+`WANDB_RUN_ID`+`WANDB_RESUME=allow` so a resubmission continues the same curve instead of
+starting a new run. Eval runs are separate wandb runs in groups `baseline-released` and
+`repro-finetune`.
+
+**The reproduction is not from-scratch.** Every published per-task sim number is a 25k-step
+finetune of `abc_dit_xl_200k_model.pt`, the multi-task parent that was already trained on robot
+and sim data. Reproducing *those* numbers means reproducing that finetune. A from-scratch sim-only
+policy has no published reference, and it needs the DINOv3 weights.
 
 ## SLURM / TACC rules
 
