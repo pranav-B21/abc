@@ -16,6 +16,11 @@ export ABC_CACHE=/scratch/11138/pranavbelligundu/abc_cache
 export UV_CACHE_DIR=/scratch/11138/pranavbelligundu/.uv_cache
 export WARP_CACHE_PATH=/scratch/11138/pranavbelligundu/.warp_cache
 export HF_HOME=/scratch/11138/pranavbelligundu/.hf_cache
+# Hugging Face token (gated DINOv3 / XDOF/ABC-130k). Kept in a private file outside
+# the repo (chmod 600, never committed); loaded here so it does not depend on how the
+# terminal was started (IDE / tmux shells may not re-read ~/.bashrc).
+[ -f "$HOME/.hf_token" ] && source "$HOME/.hf_token"
+
 # $WORK and $SCRATCH are different filesystems, so uv cannot hardlink.
 export UV_LINK_MODE=copy
 
