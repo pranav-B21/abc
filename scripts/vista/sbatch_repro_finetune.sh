@@ -37,8 +37,15 @@ mkdir -p "$CACHE_ROOT" "$OUT_DIR"
 echo "[job] $(date -Is) nodes=$SLURM_JOB_NODELIST task=$TASK run=$RUN"
 
 # 1. Data + parent (idempotent: prepare.py skips what is already present).
-uv run prepare.py --sim-data "$TASK" --cache "$CACHE_ROOT" 2>&1 | tr '\r' '\n' | grep -vE '\[get\]|\[scan\]|ETA' | tail -4
-uv run prepare.py --pretrained --cache "$CACHE_ROOT"       2>&1 | tr '\r' '\n' | grep -vE '\[get\]|\[scan\]|ETA' | tail -4
+# SKIP_PREPARE=1 for a data-scale subset root (make_data_subsets.py): prepare.py would
+# download the FULL task into it, undoing the subset.
+if [ "${SKIP_PREPARE:-0}" = 1 ]; then
+  echo "[data] SKIP_PREPARE: $(ls "$CACHE_ROOT/train_sim" | wc -l) train episodes in $CACHE_ROOT"
+  [ -f "$CACHE_ROOT/abc_dit_xl_200k_model.pt" ] || { echo "[fail] no parent in $CACHE_ROOT"; exit 1; }
+else
+  uv run prepare.py --sim-data "$TASK" --cache "$CACHE_ROOT" 2>&1 | tr '\r' '\n' | grep -vE '\[get\]|\[scan\]|ETA' | tail -4
+  uv run prepare.py --pretrained --cache "$CACHE_ROOT"       2>&1 | tr '\r' '\n' | grep -vE '\[get\]|\[scan\]|ETA' | tail -4
+fi
 
 # 2. Resume if this run already has a checkpoint, else start from the parent.
 if [ -f "$OUT_DIR/last.pt" ]; then
