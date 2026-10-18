@@ -125,7 +125,7 @@ sweep runs. Scripts: `make_matrix_roots.py`, `submit_matrix.sh`, `matrix_summary
 ## Open items
 - [x] Review and commit the sweep scripts (`c0ff182`).
 - [x] Submit the sweep (jobs 1056467–1056476, 2026-10-07). Next: collect results into `RUNS.md`.
-- [ ] 2×2 matrix: scripts ready (2026-10-18); submit `scripts/vista/submit_matrix.sh` from a login node, then `matrix_summary.py`.
+- [x] 2×2 matrix submitted 2026-10-18 (jobs 1079137–1079157). Next: when done, run `matrix_summary.py` and write up.
 - [x] Add Max as a collaborator on github.com/pranav-B21/abc (Pranav, by 2026-10-18).
 - [ ] Check in with the other lab contact about staying on the current allocation.
 - [ ] Resume the 3 failed sweep fine-tunes: included in `submit_matrix.sh` (entries frac10/25/50).

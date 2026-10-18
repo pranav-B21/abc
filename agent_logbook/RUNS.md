@@ -255,8 +255,14 @@ as the fine-tuning gain. So on put_relative most of the performance comes from p
 
 ---
 
-## 2×2 matrix: pre-training × multitask on put_relative (prepared 2026-10-18, not yet submitted)
+## 2×2 matrix: pre-training × multitask on put_relative (submitted 2026-10-18)
 - **Launcher:** `bash scripts/vista/submit_matrix.sh` (login node). Re-running it skips finished training and evals.
+- **Submitted** 2026-10-18 from `login2.vista`, commit `12af1b1`. Train → eval job IDs:
+  scratch_dino_single 1079137→1079138, scratch_rand_single 1079139→1079140,
+  mt6_pretrained 1079141→1079142, scratch_dino_mt6 1079143→1079144, scratch_rand_mt6 1079145→1079146,
+  scratch_dino_75k 1079147→1079148, frac10 1079149→1079150, frac25 1079151→1079152,
+  frac50 1079153→1079154; re-evals frac100 1079155, parent 1079156, released 1079157.
+  Logs: `$SCRATCH/abc_runs/{repro_ft,eval_run}_<jobid>.log`.
 - **Eval:** every model on the same 100 distinct put_relative scenes, seeds 20260511/31/51/71/91 × 20 worlds.
 - **Summary:** `uv run --no-project --with matplotlib python scripts/vista/matrix_summary.py` → `/scratch/11138/pranavbelligundu/abc_runs/matrix_summary/` (table + `matrix_2x2.png`, `matrix_steps.png`, `data_scale.png`).
 
