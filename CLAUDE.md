@@ -35,7 +35,7 @@ on TACC. ABC's sim runs on GH200s.
 | `origin` | `github.com/pranav-B21/abc` | Our fork. Push here. |
 | `upstream` | `github.com/amazon-far/abc` | Pull updates: `git fetch upstream && git merge upstream/main` |
 
-Work happens on branch **`vista-aarch64`**. `main` tracks upstream untouched. The repo-local git
+Work happens on branch **`pranav_dev`** (renamed from `vista-aarch64` on 2026-10-18). `main` tracks upstream untouched. The repo-local git
 identity is `pranav-B21 <pranav.belligundu@gmail.com>`, set in `.git/config` because the account
 has no global identity.
 
