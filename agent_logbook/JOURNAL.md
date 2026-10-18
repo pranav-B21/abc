@@ -84,14 +84,52 @@ multitask the expected worst. Goal: a fast closed-loop signal on whether pre-tra
 necessary for single-task policies. Latent-action pre-training is one candidate method.
 Also: share the fork with Max, and check in with the other lab contact about compute.
 
+## 2026-10-18 — How the paper built "from scratch", and the matrix setup
+
+**Paper (abc.bot/abc.pdf, §5.2 Fig. 13, App. E).** Max's column question was already asked on
+real robots: four tasks (credit card, LEGO sort, pen cap, bottle cap), single-task policies that
+"differ only in their initialization": scratch vs a 3.5K-h pre-train vs a 7K-h pre-train. More
+pre-training data always wins. Bar values exist only in the chart. Their recipe is far bigger
+than our sim recipe: 200k steps, batch 1,440, LR 1e-5, best of every-50k checkpoints picked by
+eye. So our 25k-step random-init cells are a much weaker "scratch" than theirs.
+
+**What "scratch" means in this codebase** (`abc_minimal/train_loop.py:206-243`):
+- No `--load-pretrained` builds `DiTPolicy` with random weights, then loads DINOv3 into the
+  vision encoder from `<cache-root>/dinov3_vitb16_pretrain_lvd1689m.pth` if the file exists.
+- The CLIP **text** encoder is always the frozen pretrained OpenAI CLIP, in every condition
+  (`CLIPTextEmbedder`, `.eval()` + `no_grad`), so even "all random" keeps a pretrained language
+  encoder.
+- The paper never says how its scratch arm initialized the vision encoder. Everything points
+  to DINOv3: the code path above, the README telling you to fetch DINOv3 before training, and
+  the parent's own vision encoder being DINOv3 (next point). Still an inference.
+
+**DINOv3 weights.** HF access works (token in `~/.hf_token`). HF's file uses different key
+names from the code, and the code loads with `strict=False`, so the raw file would have loaded
+nothing. I wrote `scripts/vista/convert_dinov3_hf.py`. 162/175 converted tensors have cosine
+≥ 0.99 with the 200k parent's vision encoder (max abs diff 0.006 on the patch embedding); the
+other 13 are all-zero in both. So ABC's pre-training started from DINOv3 and moved it very
+little.
+
+**Smoke tests on `c642-022`.** From scratch with DINOv3: loads `missing=13` (buffers only),
+loss 1.40 → 0.26 in 300 steps (the pre-trained model starts at 0.06). All random: prints
+"using random DINOv3", loss 1.40 → 0.50 in 100 steps.
+
+**Decisions (with Pranav).** Both no-pre-training variants (DINOv3 vision + random DiT, and all
+random); multitask = put_relative + 5 tasks the parent never saw in sim (pour, inhand transfer,
+grab clutter, conveyor pick, count into opaque box); 25k steps for every cell + one 75k
+DINOv3/single-task check; every model evaluated on the same 100 distinct scenes (5 seeds × 20
+worlds, seeds 20 apart); scratch cells normalize with the parent's stats; resume the 3 failed
+sweep runs. Scripts: `make_matrix_roots.py`, `submit_matrix.sh`, `matrix_summary.py`;
+`sbatch_repro_finetune.sh` gains `INIT=scratch VISION=dinov3|random CKPT_EVERY`.
+
 ## Open items
 - [x] Review and commit the sweep scripts (`c0ff182`).
 - [x] Submit the sweep (jobs 1056467–1056476, 2026-10-07). Next: collect results into `RUNS.md`.
-- [ ] 2×2 matrix: run random-init single-task, pre-trained multitask, random-init multitask; make a summary graph.
-- [ ] Add Max as a collaborator on github.com/pranav-B21/abc.
+- [ ] 2×2 matrix: scripts ready (2026-10-18); submit `scripts/vista/submit_matrix.sh` from a login node, then `matrix_summary.py`.
+- [x] Add Max as a collaborator on github.com/pranav-B21/abc (Pranav, by 2026-10-18).
 - [ ] Check in with the other lab contact about staying on the current allocation.
-- [ ] Resume the 3 failed sweep fine-tunes (10/25/50%, NCCL timeouts on 2026-10-08) and run their evals.
+- [ ] Resume the 3 failed sweep fine-tunes: included in `submit_matrix.sh` (entries frac10/25/50).
 - [ ] Prune checkpoints in sweep runs (24 GB each, 145 GB per run) to the steps actually evaluated.
 - [ ] Real-robot data-scale track (~300 h vs 3,000 h): blocked on access to gated `XDOF/ABC-130k`.
-- [ ] Update `abc/CLAUDE.md` "Not yet verified": multi-node training and fast inference now verified.
+- [x] Update `abc/CLAUDE.md` "Not yet verified" (2026-10-18).
 - [ ] Back up the results in `/scratch/11138/pranavbelligundu/abc_runs/` that must survive; `$SCRATCH` purges unaccessed files. (This logbook lives in the repo at `abc/agent_logbook/`.)

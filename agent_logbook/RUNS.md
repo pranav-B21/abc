@@ -252,3 +252,30 @@ Logs: `repro_ft_1056473.log`, `eval_run_1056474.log` (100%), `eval_run_1056475.l
 lands at 10–21/40 depending on the checkpoint; the step-to-step swing (10 → 21 → 10) is as large
 as the fine-tuning gain. So on put_relative most of the performance comes from pre-training, and
 40 scenes cannot resolve the fine-tuning effect. Not yet tested statistically.
+
+---
+
+## 2×2 matrix: pre-training × multitask on put_relative (prepared 2026-10-18, not yet submitted)
+- **Launcher:** `bash scripts/vista/submit_matrix.sh` (login node). Re-running it skips finished training and evals.
+- **Eval:** every model on the same 100 distinct put_relative scenes, seeds 20260511/31/51/71/91 × 20 worlds.
+- **Summary:** `uv run --no-project --with matplotlib python scripts/vista/matrix_summary.py` → `/scratch/11138/pranavbelligundu/abc_runs/matrix_summary/` (table + `matrix_2x2.png`, `matrix_steps.png`, `data_scale.png`).
+
+| Entry | Init | Vision encoder | Data (cache root under `$SCRATCH/abc_ft/`) | Steps / ckpt | Run dir |
+|---|---|---|---|---|---|
+| pre-trained single (exists) | 200k parent | parent | `put_relative` (12.09 h) | 25k / 5k | `repro_put_relative_frac100` |
+| scratch_dino_single | random DiT | DINOv3 | `put_relative_scratch_dino` | 25k / 5k | `repro_put_relative_scratch_dino` |
+| scratch_rand_single | random DiT | random | `put_relative_scratch_rand` | 25k / 5k | `repro_put_relative_scratch_rand` |
+| mt6_pretrained | 200k parent | parent | `mt6_pretrained` (87.0 h) | 25k / 5k | `repro_mt6_pretrained` |
+| scratch_dino_mt6 | random DiT | DINOv3 | `mt6_scratch_dino` | 25k / 5k | `repro_mt6_scratch_dino` |
+| scratch_rand_mt6 | random DiT | random | `mt6_scratch_rand` | 25k / 5k | `repro_mt6_scratch_rand` |
+| scratch_dino_75k | random DiT | DINOv3 | `put_relative_scratch_dino` | 75k / 25k | `repro_put_relative_scratch_dino_75k` |
+| frac10/25/50 (resume) | 200k parent | parent | `put_relative_frac{10,25,50}` | 25k / 5k | `repro_put_relative_frac{10,25,50}` |
+| refs (eval only) | — | — | — | — | `put_relative_parent`, `put_relative_released` |
+
+mt6 = put_relative 12.09 h (13.9%), sim_pouring_beads 7.01 h, sim_inhand_transfer 4.95 h, grab_clutter
+10.52 h, conveyor_pick 25.34 h, count_into_opaque_box 27.14 h; 19,093 usable episodes
+(`$SCRATCH/abc_ft/mt6/composition.json`). Sampling is uniform over frames, i.e. hours-weighted.
+Scratch roots use `$SCRATCH/abc_ft/matrix_norm_stats.json` (the parent's embedded stats) and, for
+DINOv3, `$ABC_CACHE/dinov3_vitb16_pretrain_lvd1689m.pth` (converted from HF, see JOURNAL 2026-10-18).
+Smoke tests on `c642-022` (300 / 100 / 60 steps): DINOv3 single, random single, random mt6 all train.
+Expected disk: ~1.1 TB of new checkpoints.

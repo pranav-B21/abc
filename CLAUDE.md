@@ -142,14 +142,13 @@ the preview data, run as `torchrun --standalone --nproc-per-node 1 train.py --lo
 Log: `$SCRATCH/abc_runs/smoke_train.log`. Wall-clock math: 25k steps ≈ 2.4 h, and 75k ≈ 7 h, per
 GPU-run.
 
-**Not yet verified on Vista:**
-- The default `--fast-inference` (bf16, torch.compile and CUDA graphs). The eval scripts fall
-  back to `--no-fast-inference` if it fails.
-- `--parallel-worlds` batched MJWarp eval.
-- Multi-node `torchrun` (c10d rendezvous across 2 Vista nodes). `sbatch_repro_finetune.sh` is
-  the first use.
+**Verified since (2026-10-06 → 10-18):** multi-node `torchrun` (c10d, 2 nodes, 2.35 it/s), the
+default `--fast-inference` eval, and from-scratch training (no `--load-pretrained`) with both a
+DINOv3 and a random vision encoder (loss 1.40 → 0.26 in 300 steps). Runs and results are in
+`agent_logbook/RUNS.md`. Multi-node runs can die together on a fabric hiccup (three NCCL
+all-reduce timeouts in one hour on 2026-10-08); re-submitting resumes from `last.pt`.
 
-Treat each one as unknown until it has run here.
+**Not yet verified on Vista:** `--parallel-worlds` batched MJWarp eval.
 
 ## How to run things
 
@@ -211,11 +210,20 @@ uv run torchrun --standalone --nproc-per-node 1 train.py \
   per-GPU batch, smaller global batch, more wall-clock) or go multi-node (below). A smaller global
   batch changes the optimization, so keep it **identical across every point of a data-scale sweep**.
 - **DINOv3 trap:** from-scratch DiT training (without `--load-pretrained`) loads
-  `$ABC_CACHE/dinov3_vitb16_pretrain_lvd1689m.pth`. **If that file is missing, it prints
-  `no ... using random DINOv3` and trains anyway** with a randomly initialized vision backbone
-  (`abc_minimal/train_loop.py:231`). `--load-pretrained` and `--resume-from` don't need the
-  file. The weights are license-gated: the user has to accept Meta's terms for
-  `facebook/dinov3-vitb16-pretrain-lvd1689m` on HF.
+  `<cache-root>/dinov3_vitb16_pretrain_lvd1689m.pth` (the `--cache-root`, not `$ABC_CACHE`).
+  **If that file is missing, it prints `no ... using random DINOv3` and trains anyway** with a
+  randomly initialized vision backbone (`abc_minimal/train_loop.py:232`). `--load-pretrained`
+  and `--resume-from` don't need the file. The weights are license-gated (Meta's terms for
+  `facebook/dinov3-vitb16-pretrain-lvd1689m` on HF; this account has access, token in
+  `~/.hf_token`).
+- **Second DINOv3 trap: the HF file has the wrong key names.** HF ships only transformers-format
+  `model.safetensors` (`layer.N.attention.q_proj`, …); the code expects Meta's layout
+  (`blocks.N.attn.qkv`, …) and loads with `strict=False`, so the raw HF file matches **zero** keys
+  and training silently uses a random encoder. `scripts/vista/convert_dinov3_hf.py` converts it
+  (done: `$ABC_CACHE/dinov3_vitb16_pretrain_lvd1689m.pth`, from `$ABC_CACHE/dinov3_hf/`). A correct
+  load prints `loaded DINOv3 ... (missing=13 unexpected=0)`; the 13 are model-owned buffers.
+  Verified 2026-10-18: 162/175 converted tensors have cosine ≥ 0.99 with the 200k parent's vision
+  encoder (the other 13 are all-zero in both), so ABC's pre-training itself started from DINOv3.
 - **ABC-VLA:** finetuning (`prepare.py --vla-pretrained`, `--policy vla --load-pretrained`) needs no
   Gemma base. From-scratch VLA needs Google's `gemma_pytorch` Gemma-3-4B checkpoint from Kaggle. The
   HF format won't load.

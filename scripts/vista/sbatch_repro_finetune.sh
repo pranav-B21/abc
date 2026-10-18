@@ -29,6 +29,15 @@ source vista_env.sh
 TASK=${TASK:-sim_put_the_plastic_bottles_in_the_bin}   # dataset name from prepare.py --sim-data-list
 TAG=${TAG:-recipe}
 TRAIN_STEPS=${TRAIN_STEPS:-25000}
+CKPT_EVERY=${CKPT_EVERY:-5000}
+# INIT=pretrained: start from the 200k parent (--load-pretrained), the published recipe.
+# INIT=scratch: no --load-pretrained, so the DiT starts from random weights and the vision
+#   encoder from <cache-root>/dinov3_vitb16_pretrain_lvd1689m.pth if present, else random
+#   (abc_minimal/train_loop.py:232). VISION=dinov3|random states which one is intended and is
+#   checked against the cache root below, because train.py silently falls back to random.
+#   Needs <cache-root>/norm_stats.json (make_matrix_roots.py writes the parent's stats there).
+INIT=${INIT:-pretrained}
+VISION=${VISION:-dinov3}
 RUN=repro_${TASK}_${TAG}
 CACHE_ROOT=${CACHE_ROOT:-/scratch/11138/pranavbelligundu/abc_ft/$TASK}   # one task per cache root (sim_task preset)
 OUT_DIR=/scratch/11138/pranavbelligundu/abc_runs/$RUN
@@ -41,21 +50,36 @@ echo "[job] $(date -Is) nodes=$SLURM_JOB_NODELIST task=$TASK run=$RUN"
 # download the FULL task into it, undoing the subset.
 if [ "${SKIP_PREPARE:-0}" = 1 ]; then
   echo "[data] SKIP_PREPARE: $(ls "$CACHE_ROOT/train_sim" | wc -l) train episodes in $CACHE_ROOT"
-  [ -f "$CACHE_ROOT/abc_dit_xl_200k_model.pt" ] || { echo "[fail] no parent in $CACHE_ROOT"; exit 1; }
+  if [ "$INIT" = pretrained ]; then
+    [ -f "$CACHE_ROOT/abc_dit_xl_200k_model.pt" ] || { echo "[fail] no parent in $CACHE_ROOT"; exit 1; }
+  fi
 else
   uv run prepare.py --sim-data "$TASK" --cache "$CACHE_ROOT" 2>&1 | tr '\r' '\n' | grep -vE '\[get\]|\[scan\]|ETA' | tail -4
   uv run prepare.py --pretrained --cache "$CACHE_ROOT"       2>&1 | tr '\r' '\n' | grep -vE '\[get\]|\[scan\]|ETA' | tail -4
 fi
 
-# 2. Resume if this run already has a checkpoint, else start from the parent.
+# 2. Resume if this run already has a checkpoint, else start from the parent (or from scratch).
+DINO="$CACHE_ROOT/dinov3_vitb16_pretrain_lvd1689m.pth"
+if [ "$INIT" = scratch ]; then
+  [ -f "$CACHE_ROOT/norm_stats.json" ] || { echo "[fail] INIT=scratch needs $CACHE_ROOT/norm_stats.json"; exit 1; }
+  case "$VISION" in
+    dinov3) [ -f "$DINO" ] || { echo "[fail] VISION=dinov3 but no $DINO (train.py would use a random encoder)"; exit 1; } ;;
+    random) [ ! -e "$DINO" ] || { echo "[fail] VISION=random but $DINO exists (train.py would load it)"; exit 1; } ;;
+    *) echo "[fail] VISION must be dinov3 or random"; exit 1 ;;
+  esac
+elif [ "$INIT" != pretrained ]; then
+  echo "[fail] INIT must be pretrained or scratch"; exit 1
+fi
 if [ -f "$OUT_DIR/last.pt" ]; then
   START=(--resume-from "$OUT_DIR/last.pt"); echo "[resume] $OUT_DIR/last.pt"
-else
+elif [ "$INIT" = pretrained ]; then
   START=(--load-pretrained); echo "[start] from $CACHE_ROOT/abc_dit_xl_200k_model.pt"
+else
+  START=(); echo "[start] from scratch: random DiT, vision encoder = $VISION"
 fi
 
 # 3. wandb: one run per RUN, resumed across re-submissions so the curve stays continuous.
-export WANDB_PROJECT=abc-vista WANDB_NAME=$RUN WANDB_RUN_GROUP=repro-finetune
+export WANDB_PROJECT=abc-vista WANDB_NAME=$RUN WANDB_RUN_GROUP=${WANDB_GROUP:-repro-finetune}
 export WANDB_RUN_ID=$(echo "$RUN" | tr -c 'a-zA-Z0-9_\n-' '-') WANDB_RESUME=allow
 
 HEAD_NODE=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -1)
@@ -70,7 +94,7 @@ srun --ntasks-per-node 1 bash -c "
       --cache-root $CACHE_ROOT --output-dir $OUT_DIR \
       ${START[*]} --mixture-preset sim_task \
       --flow.max-action-prefix 8 --train-steps $TRAIN_STEPS \
-      --val-every 5000 --val-batches 40 --ckpt-every 5000 \
+      --val-every $CKPT_EVERY --val-batches 40 --ckpt-every $CKPT_EVERY \
       --log-wandb --wandb-project abc-vista
 "
 echo "[job] done $(date -Is); checkpoints:"; ls -la "$OUT_DIR"
