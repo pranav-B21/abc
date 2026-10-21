@@ -122,13 +122,39 @@ worlds, seeds 20 apart); scratch cells normalize with the parent's stats; resume
 sweep runs. Scripts: `make_matrix_roots.py`, `submit_matrix.sh`, `matrix_summary.py`;
 `sbatch_repro_finetune.sh` gains `INIT=scratch VISION=dinov3|random CKPT_EVERY`.
 
+## 2026-10-21: matrix half done, NCCL hangs again, and fine-tuning does not beat the parent
+
+**What finished.** mt6_pretrained, frac10, frac25 trained and evaluated; parent, released and
+frac100 re-evaluated on the 100 scenes. The other 6 training jobs (all 4 scratch cells, the 75k
+check, frac50) died on 2026-10-19 from the same NCCL all-reduce hang as 10-08. That is now 9 of
+13 two-node jobs, so it is not a one-off fabric event; treat it as a property of 2-node runs on
+Vista. Rather than chase the cause, `sbatch_repro_finetune.sh` now retries in-allocation from
+`last.pt` (up to 4 tries, fresh rendezvous each time). The 75k run checkpointed only every 25k
+and lost all 15k steps; it now checkpoints every 5k. Needs a login node to resubmit (see RUNS.md).
+
+**The finding.** On 100 scenes the zero-shot parent scores 33, the same as our 12 h put_relative
+fine-tune (33, p = 1.0) and the 87 h multitask fine-tune (32, p = 1.0). The released checkpoint's
+39 is not significantly above it either (p = 0.45). The released number itself reproduces the
+README (37.5%). So on put_relative, everything the pre-trained row knows comes from pre-training,
+and 25k steps of task data add nothing measurable; with only 1.2 h of it the model gets worse
+(20, p = 0.024). The 40-scene sweep (parent 13/40, released 19/40) said the same thing more
+noisily. Two consequences:
+- put_relative is a weak task for a data-scale curve (the curve is flat from 3 h up). A task
+  where the parent starts low would show scale effects better.
+- The matrix's pre-training column is still informative: if the scratch cells come in well
+  below 33, that gap *is* the value of pre-training, which is Max's question.
+
+Open: put_relative is not one of the parent's 5 sim tasks, but the parent saw 3,553 h of real
+teleop, which may contain put-relative-like behaviour. That would explain a 33% zero-shot rate.
+
 ## Open items
 - [x] Review and commit the sweep scripts (`c0ff182`).
 - [x] Submit the sweep (jobs 1056467–1056476, 2026-10-07). Next: collect results into `RUNS.md`.
-- [x] 2×2 matrix submitted 2026-10-18 (jobs 1079137–1079157). Next: when done, run `matrix_summary.py` and write up.
+- [x] 2×2 matrix submitted 2026-10-18 (jobs 1079137–1079157). 3/9 trained; results in RUNS.md (2026-10-21).
+- [ ] Resubmit the 6 hung runs from a login node with the retry launcher (command in RUNS.md), then re-run `matrix_summary.py`.
 - [x] Add Max as a collaborator on github.com/pranav-B21/abc (Pranav, by 2026-10-18).
 - [ ] Check in with the other lab contact about staying on the current allocation.
-- [ ] Resume the 3 failed sweep fine-tunes: included in `submit_matrix.sh` (entries frac10/25/50).
+- [ ] Resume the 3 failed sweep fine-tunes: frac10 and frac25 done 2026-10-19; frac50 hung again, in the resubmit.
 - [ ] Prune checkpoints in sweep runs (24 GB each, 145 GB per run) to the steps actually evaluated.
 - [ ] Real-robot data-scale track (~300 h vs 3,000 h): blocked on access to gated `XDOF/ABC-130k`.
 - [x] Update `abc/CLAUDE.md` "Not yet verified" (2026-10-18).

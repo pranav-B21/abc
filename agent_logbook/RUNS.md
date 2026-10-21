@@ -285,3 +285,48 @@ Scratch roots use `$SCRATCH/abc_ft/matrix_norm_stats.json` (the parent's embedde
 DINOv3, `$ABC_CACHE/dinov3_vitb16_pretrain_lvd1689m.pth` (converted from HF, see JOURNAL 2026-10-18).
 Smoke tests on `c642-022` (300 / 100 / 60 steps): DINOv3 single, random single, random mt6 all train.
 Expected disk: ~1.1 TB of new checkpoints.
+
+### Outcome of the 2026-10-18 submission (checked 2026-10-21 on `c642-042`)
+**3 of 9 training jobs finished; 6 died on 2026-10-19 between 02:37 and 05:41** from the same
+2-node NCCL all-reduce hang as the 2026-10-08 sweep: training ran normally at ~2.3 it/s, then one
+`ALLREDUCE` sat for 600 s and the watchdog killed both ranks, with nothing logged beforehand.
+Their chained evals sat at `DependencyNeverSatisfied`. All 3 reference re-evals finished.
+
+| Job | Run | Died at step | Saved checkpoints |
+|---|---|---|---|
+| 1079137 | scratch_dino_single | 5,460 | 5k |
+| 1079139 | scratch_rand_single | 11,600 | 5k, 10k |
+| 1079143 | scratch_dino_mt6 | 16,280 | 5k–15k |
+| 1079145 | scratch_rand_mt6 | 22,960 | 5k–20k |
+| 1079147 | scratch_dino_75k | 15,180 | **none** (ckpt every 25k, so all of it is lost) |
+| 1079153 | frac50 | 10,660 | 5k, 10k (plus what the 10-08 run saved) |
+
+**Fix (2026-10-21):** `sbatch_repro_finetune.sh` now retries inside its allocation (`MAX_TRIES=4`),
+resuming from `last.pt` under a fresh rendezvous id and port, and only exits 0 once
+`$TRAIN_STEPS.pt` exists. `submit_matrix.sh` now checkpoints the 75k run every 5k (eval only at
+25k/50k/75k) and gives it 20 h. Resubmit (login node):
+`scancel 1079138 1079140 1079144 1079146 1079148 1079154` then
+`ONLY="scratch_dino_single scratch_rand_single scratch_dino_mt6 scratch_rand_mt6 scratch_dino_75k frac50" bash scripts/vista/submit_matrix.sh`.
+
+### Results so far (100 scenes, `matrix_summary/matrix_table.csv`)
+Success / 100 at each checkpoint. Paired p = exact McNemar on the same 100 scenes.
+
+| Model | 5k | 10k | 15k | 20k | 25k | 25k vs parent (paired) |
+|---|---|---|---|---|---|---|
+| Parent, zero-shot (no fine-tuning) | | | | | **33** | — |
+| Released put_relative@25k | | | | | **39** | p = 0.45 (19 vs 25 discordant) |
+| Pre-trained + single (frac100, 12.09 h) | 28 | 28 | 39 | 31 | **33** | p = 1.0 (23 vs 23) |
+| Pre-trained + multitask (mt6, 87 h) | 23 | 31 | 23 | 25 | **32** | p = 1.0 (17 vs 16) |
+| Pre-trained + single, frac25 (3.02 h) | 25 | 27 | 23 | 26 | **30** | p = 0.74 |
+| Pre-trained + single, frac10 (1.21 h) | 21 | 21 | 16 | 23 | **20** | **p = 0.024, worse than the parent** |
+
+- **Released checkpoint reproduces the README** (39/100 here vs 15/40 = 37.5% published).
+- **Fine-tuning on put_relative does not measurably beat the zero-shot parent.** Our 12 h run ties it
+  exactly, and even the released checkpoint's +6 points is not significant.
+- **Multitask = single-task** for the pre-trained row (32 vs 33, p = 1.0).
+- **Data scale:** 1.2 h → 20, 3 h → 30, 12 h → 33. The smallest subset is the only significant
+  effect, and it is *negative* vs the parent: 1.2 h of task data makes the model worse.
+- **Noise is large:** two models with the same 33% disagree on 46 of 100 scenes, and frac100
+  moves 28 → 39 → 31 between neighbouring checkpoints. A 100-scene eval resolves roughly ±13 points
+  (Wilson half-width at 33%) between models, so only big effects will be visible. The scratch
+  cells are expected to be one.

@@ -145,8 +145,10 @@ GPU-run.
 **Verified since (2026-10-06 → 10-18):** multi-node `torchrun` (c10d, 2 nodes, 2.35 it/s), the
 default `--fast-inference` eval, and from-scratch training (no `--load-pretrained`) with both a
 DINOv3 and a random vision encoder (loss 1.40 → 0.26 in 300 steps). Runs and results are in
-`agent_logbook/RUNS.md`. Multi-node runs can die together on a fabric hiccup (three NCCL
-all-reduce timeouts in one hour on 2026-10-08); re-submitting resumes from `last.pt`.
+`agent_logbook/RUNS.md`. **2-node runs hang routinely:** one all-reduce stalls until the 10-min
+NCCL watchdog kills both ranks, with no prior warning (9 of 13 jobs on 2026-10-08 and 10-19).
+`sbatch_repro_finetune.sh` therefore retries in-allocation from `last.pt` (`MAX_TRIES=4`), so keep
+`CKPT_EVERY` small enough that a hang loses little (a 75k run at ckpt-every 25k lost 15k steps).
 
 **Not yet verified on Vista:** `--parallel-worlds` batched MJWarp eval.
 
