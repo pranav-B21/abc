@@ -308,6 +308,11 @@ resuming from `last.pt` under a fresh rendezvous id and port, and only exits 0 o
 `scancel 1079138 1079140 1079144 1079146 1079148 1079154` then
 `ONLY="scratch_dino_single scratch_rand_single scratch_dino_mt6 scratch_rand_mt6 scratch_dino_75k frac50" bash scripts/vista/submit_matrix.sh`.
 
+**Resubmitted 2026-10-21** from `login1.vista` with the retry launcher (commit `d7765ed`); the old
+chained evals were already gone from the queue. Train → eval: scratch_dino_single 1088031→1088032,
+scratch_rand_single 1088033→1088034, scratch_dino_mt6 1088035→1088036, scratch_rand_mt6
+1088037→1088038, scratch_dino_75k 1088039→1088040 (from step 0), frac50 1088041→1088042.
+
 ### Results so far (100 scenes, `matrix_summary/matrix_table.csv`)
 Success / 100 at each checkpoint. Paired p = exact McNemar on the same 100 scenes.
 

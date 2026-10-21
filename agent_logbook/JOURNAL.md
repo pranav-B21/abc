@@ -151,7 +151,7 @@ teleop, which may contain put-relative-like behaviour. That would explain a 33% 
 - [x] Review and commit the sweep scripts (`c0ff182`).
 - [x] Submit the sweep (jobs 1056467–1056476, 2026-10-07). Next: collect results into `RUNS.md`.
 - [x] 2×2 matrix submitted 2026-10-18 (jobs 1079137–1079157). 3/9 trained; results in RUNS.md (2026-10-21).
-- [ ] Resubmit the 6 hung runs from a login node with the retry launcher (command in RUNS.md), then re-run `matrix_summary.py`.
+- [x] Resubmitted the 6 hung runs 2026-10-21 (jobs 1088031–1088042). Next: when done, re-run `matrix_summary.py`.
 - [x] Add Max as a collaborator on github.com/pranav-B21/abc (Pranav, by 2026-10-18).
 - [ ] Check in with the other lab contact about staying on the current allocation.
 - [ ] Resume the 3 failed sweep fine-tunes: frac10 and frac25 done 2026-10-19; frac50 hung again, in the resubmit.
