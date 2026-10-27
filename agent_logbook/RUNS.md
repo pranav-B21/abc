@@ -360,8 +360,8 @@ Per-checkpoint (5k/10k/15k/20k/25k): scratch_dino single 13/11/13/19/13; scratch
 
 Paired tests at 25k (exact McNemar, same 100 scenes):
 - **Pre-training: 33 vs 13, p = 5e-4** (frac100 vs scratch_dino single; 26 vs 6 discordant). Every
-  scratch cell is below the pre-trained single cell at every checkpoint, p ≤ 0.05 at all 20
-  (cell × step) points. The zero-shot parent alone (33) beats scratch_dino@25k: p = 9e-5.
+  scratch cell is below the pre-trained single cell at every checkpoint, p < 0.01 at 18 of 20
+  (cell × step) points (DINOv3 single 20k: p = 0.050). The zero-shot parent alone (33) beats scratch_dino@25k: p = 9e-5.
 - **DINOv3 vs random vision: no significant difference at 25k** (single 13 vs 11, p = 0.77; mt6
   12 vs 13, p = 1.0). Pooled over checkpoints DINOv3 leads by ~4–5 points in both rows
   (69 vs 46 and 59 vs 39 per 500), suggestive only: checkpoints of one run are not independent.
