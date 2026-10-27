@@ -326,8 +326,12 @@ Success / 100 at each checkpoint. Paired p = exact McNemar on the same 100 scene
 | Pre-trained + single, frac10 (1.21 h) | 21 | 21 | 16 | 23 | **20** | **p = 0.024, worse than the parent** |
 
 - **Released checkpoint reproduces the README** (39/100 here vs 15/40 = 37.5% published).
-- **Fine-tuning on put_relative does not measurably beat the zero-shot parent.** Our 12 h run ties it
-  exactly, and even the released checkpoint's +6 points is not significant.
+- **Fine-tuning on put_relative does not measurably raise success over the zero-shot parent.** Our 12 h
+  run ties it exactly (23 vs 23 discordant), and the released checkpoint's +6 points is not
+  significant. **But partial progress rises** (mean max-progress, paired permutation test vs parent,
+  2026-10-26): 12 h 0.62 → 0.71 (p = 0.046), released 0.70 (p = 0.066), mt6 0.68 (p = 0.16),
+  3 h 0.58 (p = 0.47), 1.2 h 0.50 (p = 0.005). So fine-tuning likely helps a little, below what 100
+  scenes resolve on success; the 1.2 h degradation is solid on both metrics.
 - **Multitask = single-task** for the pre-trained row (32 vs 33, p = 1.0).
 - **Data scale:** 1.2 h → 20, 3 h → 30, 12 h → 33. The smallest subset is the only significant
   effect, and it is *negative* vs the parent: 1.2 h of task data makes the model worse.

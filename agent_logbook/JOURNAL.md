@@ -136,7 +136,7 @@ and lost all 15k steps; it now checkpoints every 5k. Needs a login node to resub
 fine-tune (33, p = 1.0) and the 87 h multitask fine-tune (32, p = 1.0). The released checkpoint's
 39 is not significantly above it either (p = 0.45). The released number itself reproduces the
 README (37.5%). So on put_relative, everything the pre-trained row knows comes from pre-training,
-and 25k steps of task data add nothing measurable; with only 1.2 h of it the model gets worse
+and 25k steps of task data add nothing measurable to success (partial progress does rise, 0.62 → 0.71, p = 0.046, see RUNS.md); with only 1.2 h of it the model gets worse
 (20, p = 0.024). The 40-scene sweep (parent 13/40, released 19/40) said the same thing more
 noisily. Two consequences:
 - put_relative is a weak task for a data-scale curve (the curve is flat from 3 h up). A task
