@@ -108,7 +108,7 @@ for try in $(seq 1 "$MAX_TRIES"); do
   # A dead try can leave its ranks alive and holding ~78 GB, so the next try OOMs on startup
   # (2026-10-22, jobs 1088039/41). Kill them and wait for the GPU to drain; if it never does,
   # give up so a resubmission lands on fresh nodes. The [t] keeps pkill off this shell.
-  srun --ntasks-per-node 1 bash -c '
+  timeout 720 srun --overlap --ntasks-per-node 1 bash -c '
     pkill -9 -f "[t]orchrun|[t]rain\.py"
     for i in $(seq 60); do
       m=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | head -1)
