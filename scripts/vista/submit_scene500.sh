@@ -20,7 +20,10 @@ HALF2="${NEW[*]:10:10}"
 
 sub() {
   if [ "$DRY_RUN" = 1 ]; then echo "DRY-$RANDOM"; echo "  [dry] sbatch $*" >&2; return; fi
-  sbatch --parsable "$@" | tail -1
+  local id; id=$(sbatch --parsable "$@" | tail -1)
+  # On compute nodes TACC's sbatch is a stub that prints a notice and returns 0.
+  [[ "$id" =~ ^[0-9]+$ ]] || { echo "[fail] sbatch returned no job id; run this from a LOGIN node" >&2; exit 1; }
+  echo "$id"
 }
 
 # run dir  step  short name

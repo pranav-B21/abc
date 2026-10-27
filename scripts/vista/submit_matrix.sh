@@ -37,7 +37,10 @@ ONLY=${ONLY:-}
 want() { [ -z "$ONLY" ] || [[ " $ONLY " == *" $1 "* ]]; }
 sub() {  # prints the job id (TACC's banner goes to stdout too, hence tail -1)
   if [ "$DRY_RUN" = 1 ]; then echo "DRY-$RANDOM"; echo "  [dry] sbatch $*" >&2; return; fi
-  sbatch --parsable "$@" | tail -1
+  local id; id=$(sbatch --parsable "$@" | tail -1)
+  # On compute nodes TACC's sbatch is a stub that prints a notice and returns 0.
+  [[ "$id" =~ ^[0-9]+$ ]] || { echo "[fail] sbatch returned no job id; run this from a LOGIN node" >&2; exit 1; }
+  echo "$id"
 }
 
 # name  task  tag  cache_root  init  vision  steps  ckpt_every
