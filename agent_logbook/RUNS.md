@@ -371,3 +371,6 @@ Paired tests at 25k (exact McNemar, same 100 scenes):
   close at 25k. The 75k run is what tests that.
 
 Figures: `/scratch/11138/pranavbelligundu/abc_runs/matrix_summary/{matrix_2x2,matrix_steps,data_scale}.png`.
+
+**Resubmitted 2026-10-26** from `login1.vista` (commit `659d0d7`, retry with cleanup): scratch_dino_75k
+1103215→1103216 (resumes from 5k), frac50 1103217→1103218 (resumes from 20k). Old evals 1088040/42 cancelled.
