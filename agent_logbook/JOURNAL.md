@@ -147,11 +147,29 @@ noisily. Two consequences:
 Open: put_relative is not one of the parent's 5 sim tasks, but the parent saw 3,553 h of real
 teleop, which may contain put-relative-like behaviour. That would explain a 33% zero-shot rate.
 
+## 2026-10-26: the 2×2 matrix is complete; pre-training is the whole effect
+
+All four no-pre-training cells finished on the second submission. On the same 100 scenes at 25k:
+pre-trained 33 / 32 (single / multi), no pre-training 11–13 in every cell, regardless of vision
+init or task mix. Pre-training is worth ~20 points (p = 5e-4); 25k steps of training from scratch
+on 12 h or 87 h of sim data gets about a third of what the 200k parent gets *with no fine-tuning
+at all*. Multitask did nothing in any column. The DINOv3 encoder over a random one is at most a
+few points (not significant at 25k; ~4–5 points pooled over checkpoints).
+
+Read for Max: ABC's value on this task comes from its large-scale pre-training (3,553 h real +
+98 h sim), not from the task data or from a pretrained vision encoder. The open caveat is
+compute: scratch cells got 25k steps, the parent got 200k at a much larger batch. The 75k run
+tests whether more steps close it; the flat 5k→25k scratch curves suggest not much.
+
+The 75k and frac50 runs failed again, this time from a cluster-side stall followed by OOM on
+every retry (leftover ranks held GPU memory). Fixed the retry to clean up and wait for memory.
+
 ## Open items
 - [x] Review and commit the sweep scripts (`c0ff182`).
 - [x] Submit the sweep (jobs 1056467–1056476, 2026-10-07). Next: collect results into `RUNS.md`.
 - [x] 2×2 matrix submitted 2026-10-18 (jobs 1079137–1079157). 3/9 trained; results in RUNS.md (2026-10-21).
-- [x] Resubmitted the 6 hung runs 2026-10-21 (jobs 1088031–1088042). Next: when done, re-run `matrix_summary.py`.
+- [x] Resubmitted the 6 hung runs 2026-10-21 (jobs 1088031–1088042). 4 matrix cells done 2026-10-23; matrix complete.
+- [ ] Resubmit scratch_dino_75k and frac50 (failed 2026-10-22; command in RUNS.md).
 - [x] Add Max as a collaborator on github.com/pranav-B21/abc (Pranav, by 2026-10-18).
 - [ ] Check in with the other lab contact about staying on the current allocation.
 - [ ] Resume the 3 failed sweep fine-tunes: frac10 and frac25 done 2026-10-19; frac50 hung again, in the resubmit.

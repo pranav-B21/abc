@@ -149,6 +149,8 @@ DINOv3 and a random vision encoder (loss 1.40 → 0.26 in 300 steps). Runs and r
 NCCL watchdog kills both ranks, with no prior warning (9 of 13 jobs on 2026-10-08 and 10-19).
 `sbatch_repro_finetune.sh` therefore retries in-allocation from `last.pt` (`MAX_TRIES=4`), so keep
 `CKPT_EVERY` small enough that a hang loses little (a 75k run at ckpt-every 25k lost 15k steps).
+A dead try can leave its ranks holding ~78 GB per GPU, so each retry first kills them and waits
+for the GPU to drain (2026-10-22: without this, every retry OOM'd).
 
 **Not yet verified on Vista:** `--parallel-worlds` batched MJWarp eval.
 

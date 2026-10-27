@@ -105,7 +105,17 @@ for try in $(seq 1 "$MAX_TRIES"); do
         --log-wandb --wandb-project abc-vista
   "; then break; fi
   echo "[retry] try $try failed $(date -Is)"
-  sleep 30
+  # A dead try can leave its ranks alive and holding ~78 GB, so the next try OOMs on startup
+  # (2026-10-22, jobs 1088039/41). Kill them and wait for the GPU to drain; if it never does,
+  # give up so a resubmission lands on fresh nodes. The [t] keeps pkill off this shell.
+  srun --ntasks-per-node 1 bash -c '
+    pkill -9 -f "[t]orchrun|[t]rain\.py"
+    for i in $(seq 60); do
+      m=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | head -1)
+      [ "$m" -lt 2000 ] && exit 0; sleep 10
+    done
+    echo "[fail] $(hostname): GPU still holds ${m} MiB after 10 min"; exit 1
+  ' || { echo "[fail] GPU memory not released; resubmit to get fresh nodes"; exit 1; }
 done
 [ -f "$OUT_DIR/$TRAIN_STEPS.pt" ] || { echo "[fail] no $OUT_DIR/$TRAIN_STEPS.pt after $MAX_TRIES tries"; exit 1; }
 echo "[job] done $(date -Is); checkpoints:"; ls -la "$OUT_DIR"

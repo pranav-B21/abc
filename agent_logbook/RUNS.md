@@ -335,3 +335,39 @@ Success / 100 at each checkpoint. Paired p = exact McNemar on the same 100 scene
   moves 28 → 39 → 31 between neighbouring checkpoints. A 100-scene eval resolves roughly ±13 points
   (Wilson half-width at 33%) between models, so only big effects will be visible. The scratch
   cells are expected to be one.
+
+### Second submission outcome and the completed matrix (checked 2026-10-26 on `c642-031`)
+**All 4 no-pre-training cells finished and were evaluated** (train 2026-10-22, eval 2026-10-23).
+scratch_rand_single needed 3 tries (2 in-allocation retries); the other three ran clean.
+**scratch_dino_75k (1088039) and frac50 (1088041) failed again:** both stalled at 17:15 on
+2026-10-22 on different node pairs (c10d heartbeat failures, no NCCL watchdog for 85 min, so a
+cluster-side event), died at 18:40, and every retry then OOM'd because the dead try's ranks
+still held ~78 GB per GPU. Checkpoints now: 75k at 5k; frac50 at 20k. Their evals (1088040,
+1088042) are `DependencyNeverSatisfied`. **Fix:** a failed try now `pkill`s leftover ranks on each
+node and waits up to 10 min for GPU memory to drop below 2 GB, else exits so a resubmit gets fresh
+nodes. Resubmit: `scancel 1088040 1088042; ONLY="scratch_dino_75k frac50" bash scripts/vista/submit_matrix.sh`.
+
+**Max's 2×2 matrix: put_relative success / 100 scenes at 25k** (pooled over the five 5k–25k
+checkpoints in brackets, 500 rollouts; mean max-progress at 25k after the slash)
+
+| | Pre-trained (200k parent) | No pre-training, DINOv3 vision | No pre-training, all random |
+|---|---|---|---|
+| Single-task (12.09 h) | **33** [31.8%] / 0.71 | **13** [13.8%] / 0.40 | **11** [9.2%] / 0.39 |
+| Multitask (mt6, 87 h) | **32** [26.8%] / 0.68 | **12** [11.8%] / 0.41 | **13** [7.8%] / 0.41 |
+
+Per-checkpoint (5k/10k/15k/20k/25k): scratch_dino single 13/11/13/19/13; scratch_rand single
+7/8/9/11/11; scratch_dino mt6 10/12/11/14/12; scratch_rand mt6 6/6/8/6/13.
+
+Paired tests at 25k (exact McNemar, same 100 scenes):
+- **Pre-training: 33 vs 13, p = 5e-4** (frac100 vs scratch_dino single; 26 vs 6 discordant). Every
+  scratch cell is below the pre-trained single cell at every checkpoint, p ≤ 0.05 at all 20
+  (cell × step) points. The zero-shot parent alone (33) beats scratch_dino@25k: p = 9e-5.
+- **DINOv3 vs random vision: no significant difference at 25k** (single 13 vs 11, p = 0.77; mt6
+  12 vs 13, p = 1.0). Pooled over checkpoints DINOv3 leads by ~4–5 points in both rows
+  (69 vs 46 and 59 vs 39 per 500), suggestive only: checkpoints of one run are not independent.
+- **Multitask vs single-task: no difference in any column** (pre-trained 32 vs 33, p = 1.0;
+  DINOv3 12 vs 13, p = 1.0; random 13 vs 11, p = 0.79).
+- Learning curves are flat for scratch from 5k to 25k (≈ 7–19%), so the gap is not about to
+  close at 25k. The 75k run is what tests that.
+
+Figures: `/scratch/11138/pranavbelligundu/abc_runs/matrix_summary/{matrix_2x2,matrix_steps,data_scale}.png`.
