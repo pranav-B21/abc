@@ -1,8 +1,11 @@
 """Summarize Max's 2x2 matrix and the put_relative data-scale sweep, with figures.
 
 Reads every <run>/eval/<label>_step<N>_seed<S>/summary.json under abc_runs and scores each
-(run, step) on the fixed scene set (5 seeds x 20 worlds = 100 scenes; scored on whatever subset
-is present, and the table says how many). Outputs to --out:
+(run, step) on the fixed scene set: seeds 20260511 + 20k, k = 0..24, x 20 worlds. Two of those
+seeds (20260631, 20260851) never generate a scene, so a fully evaluated model has 460 scenes; the
+first 5 seeds are the original 100-scene matrix set (--matrix-scenes restricts to them). Each
+(run, step) is scored on whatever subset is present and the table says how many; paired tests use
+the scenes both models share. Outputs to --out:
 
     matrix_table.csv        every (cell, step): successes, n, rate, 95% Wilson CI, mean progress,
                             paired McNemar vs the pre-trained single-task cell at the same step
@@ -22,7 +25,8 @@ import re
 from pathlib import Path
 
 RUNS = Path("/scratch/11138/pranavbelligundu/abc_runs")
-SEEDS = [20260511, 20260531, 20260551, 20260571, 20260591]
+SEEDS = list(range(20260511, 20260992, 20))  # submit_scene500.sh; the first 5 are the matrix seeds
+MATRIX_SEEDS = SEEDS[:5]
 
 # run dir -> (init, data); init in pretrained | scratch_dino | scratch_rand
 CELLS = {
@@ -102,7 +106,11 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", type=Path, default=RUNS / "matrix_summary")
     ap.add_argument("--final-step", type=int, default=25000)
+    ap.add_argument("--matrix-scenes", action="store_true",
+                    help="score only the original 100 scenes (5 seeds), as before 2026-10-28")
     args = ap.parse_args()
+    if args.matrix_scenes:
+        SEEDS[:] = MATRIX_SEEDS
     args.out.mkdir(parents=True, exist_ok=True)
 
     names = {**{k: f"{v[0]} / {v[1]}" for k, v in CELLS.items()}, **EXTRA,
