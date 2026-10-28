@@ -378,3 +378,23 @@ Figures: `/scratch/11138/pranavbelligundu/abc_runs/matrix_summary/{matrix_2x2,ma
 
 **Resubmitted 2026-10-26** from `login1.vista` (commit `659d0d7`, retry with cleanup): scratch_dino_75k
 1103215→1103216 (resumes from 5k), frac50 1103217→1103218 (resumes from 20k). Old evals 1088040/42 cancelled.
+
+## 500-scene check: fine-tuned vs not fine-tuned (submitted 2026-10-27, done 2026-10-28)
+- **Launcher:** `scripts/vista/submit_scene500.sh` (login node), jobs 1103379/80 (parent), 1103381/82
+  (frac100@25k); 1 node each, ~2–2.6 h. **Analysis:** `uv run --no-project python scripts/vista/compare_scene500.py`.
+- **Scenes:** seeds 20260511 + 20k, k = 0..24. Seeds 20260631 and 20260851 crash for both models at
+  scene generation (`put_relative could not place non-overlapping objects`), a property of the
+  seed, not the model, so the comparison uses the **460 scenes both models have**.
+
+| Model | Success | 95% CI | Mean progress |
+|---|---|---|---|
+| Parent, no fine-tuning | 141/460 = **30.7%** | [26.6, 35.0] | 0.630 |
+| Fine-tuned 12 h, step 25k | 175/460 = **38.0%** | [33.7, 42.6] | 0.734 |
+
+- **Success +7.4 points, McNemar p = 0.015** (75 scenes only the parent solves, 109 only the fine-tune).
+- **Progress +0.104, permutation p < 5e-5** (fine-tune better on 221 scenes, worse on 146).
+- **This overturns the 100-scene reading** ("fine-tuning adds nothing to success"): the first 100
+  scenes happened to tie 33 vs 33; on the 360 new scenes alone it is 108 vs 142. The fine-tune's
+  38.0% matches the released checkpoint (39/100) and the README (37.5%).
+- Still one fine-tuning run; training-seed variance (plan step B) is untested.
+

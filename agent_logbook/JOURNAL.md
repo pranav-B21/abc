@@ -177,7 +177,7 @@ detectable, so Pranav chose to re-test just these two models on 500 scenes (step
 - [x] Submit the sweep (jobs 1056467–1056476, 2026-10-07). Next: collect results into `RUNS.md`.
 - [x] 2×2 matrix submitted 2026-10-18 (jobs 1079137–1079157). 3/9 trained; results in RUNS.md (2026-10-21).
 - [x] Resubmitted the 6 hung runs 2026-10-21 (jobs 1088031–1088042). 4 matrix cells done 2026-10-23; matrix complete.
-- [ ] Submit `submit_scene500.sh` (login node), then run `compare_scene500.py`.
+- [x] 500-scene check done 2026-10-28: fine-tuning +7.4 points (p = 0.015). See RUNS.md.
 - [x] Resubmitted scratch_dino_75k and frac50 2026-10-26 (jobs 1103215–1103218). Next: re-run `matrix_summary.py` when done.
 - [x] Add Max as a collaborator on github.com/pranav-B21/abc (Pranav, by 2026-10-18).
 - [ ] Check in with the other lab contact about staying on the current allocation.
