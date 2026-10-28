@@ -173,6 +173,25 @@ detectable, so Pranav chose to re-test just these two models on 500 scenes (step
 (20260611..20260991, spacing 20, no overlapping world seeds) as 4 one-node jobs;
 `compare_scene500.py` gives the paired success and progress tests on the first 100 and on all.
 
+## 2026-10-28: on 460 scenes, fine-tuning does help
+
+The 500-scene check reversed the 100-scene conclusion. Parent 30.7% vs our 12 h fine-tune 38.0%
+(+7.4 points, p = 0.015); progress 0.63 vs 0.73 (p < 5e-5). The 100-scene tie was sampling luck
+(on the 360 new scenes alone: 30% vs 39%), which is the risk the larger test was meant to rule out.
+Revised picture of put_relative: pre-training gives ~31%, fine-tuning on 12 h adds ~7 points to reach
+the published ~38%, training from scratch reaches ~12%. Two seeds (20260631, 20260851) fail scene
+generation for every model, so the comparison uses 460 scenes.
+
+Knock-on for earlier 100-scene conclusions (the first 100 scenes read the fine-tune ~5 points low,
+and 100 scenes cannot resolve gaps under ~13 points):
+- Pre-training gap: holds, likely ~25 points against the 38% fine-tune.
+- 1.2 h worse than the parent: holds (success p = 0.024, progress p = 0.005).
+- "Multitask = single-task" and "DINOv3 ≈ random": downgraded to "no large (>~13 pt) difference".
+- "Data-scale curve flat from 3 h up / put_relative a weak data-scale task": withdrawn
+  (3 h 30% on 100 scenes vs 12 h 38% on 460).
+- Released checkpoint's +6 over the parent: now consistent with the measured +7.4.
+
+## Open items
 - [x] Review and commit the sweep scripts (`c0ff182`).
 - [x] Submit the sweep (jobs 1056467–1056476, 2026-10-07). Next: collect results into `RUNS.md`.
 - [x] 2×2 matrix submitted 2026-10-18 (jobs 1079137–1079157). 3/9 trained; results in RUNS.md (2026-10-21).
