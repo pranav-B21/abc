@@ -197,7 +197,7 @@ and 100 scenes cannot resolve gaps under ~13 points):
 - [x] 2×2 matrix submitted 2026-10-18 (jobs 1079137–1079157). 3/9 trained; results in RUNS.md (2026-10-21).
 - [x] Resubmitted the 6 hung runs 2026-10-21 (jobs 1088031–1088042). 4 matrix cells done 2026-10-23; matrix complete.
 - [x] 500-scene check done 2026-10-28: fine-tuning +7.4 points (p = 0.015). See RUNS.md.
-- [ ] 460 scenes for every compared model (Pranav, 2026-10-28): `submit_scene500.sh` now covers the
+- [ ] 460 scenes for every compared model: submitted 2026-10-28 (jobs 1107195–1107212); re-run for the 75k run once trained. `submit_scene500.sh` now covers the
   5 other matrix cells, released, frac10/25 (16 one-node jobs), and frac50 + the 75k run once
   trained (re-run the script then). `matrix_summary.py` now reads all 25 seeds
   (`--matrix-scenes` reproduces the 100-scene numbers). Then regenerate the figures and the page.

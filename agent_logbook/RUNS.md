@@ -398,3 +398,11 @@ Figures: `/scratch/11138/pranavbelligundu/abc_runs/matrix_summary/{matrix_2x2,ma
   38.0% matches the released checkpoint (39/100) and the README (37.5%).
 - Still one fine-tuning run; training-seed variance (plan step B) is untested.
 
+**460 scenes for every model, submitted 2026-10-28** from `login1.vista` (commit `932cab4`), two 1-node
+jobs per model (seeds 20260611..20260791 / 20260811..20260991, minus 20260631 and 20260851):
+released 1107195/96, mt6_pretrained 1107197/98, scratch_dino single 1107199/1107200, scratch_rand
+single 1107201/02, scratch_dino mt6 1107203/04, scratch_rand mt6 1107205/06, frac10 1107207/08,
+frac25 1107209/10, frac50 1107211/12 (frac50 finished training before submission). Parent and
+frac100 were already done. scratch_dino_75k (training, job 1103215) still needs
+`bash scripts/vista/submit_scene500.sh` re-run after it finishes.
+
