@@ -459,3 +459,15 @@ Paired, n = 460 (McNemar on success; sign-flip permutation on progress, 5,000 dr
 Unadjusted across 18 tests (Bonferroni bar 0.0028). The 5k–20k rows in `matrix_table.csv` are still
 100 scenes; 25k rows are 460. The earlier 100-scene tables above are superseded for 25k.
 
+**What a scene is, and two reading notes (2026-10-31, `abc_sim/randomization/tasks/put_relative.py`,
+`abc_sim/task_eval/put_relative.py`).** World seed -> 4–6 objects from 28 categories, positions, and one
+directive ("put the mug to the left of the apple"; of 460: right 142, left 139, behind 123, front 56).
+Success = mover within 6–30 cm along the directive axis of the reference, within 8 cm off-axis, and set
+down; the episode stops at first success, else at 3,540 steps.
+- **11 of the 460 scenes start already solved** (the same 11 for every model, success at step 1), a free
+  2.4 points in every rate. Excluding them: parent 29.0%, frac100 36.5%, scratch DINOv3 13.0%, scratch
+  random 7.1%. Paired tests are unaffected (these scenes are ties).
+- **`max_reward` ("progress") is closeness, not task stages:** best-ever `1 - gap / 0.25 m` from mover to
+  the target region, capped at 0.99 without success. It can be high from the start if the mover spawns
+  nearby, so read it as secondary.
+
