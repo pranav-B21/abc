@@ -406,3 +406,56 @@ frac25 1107209/10, frac50 1107211/12 (frac50 finished training before submission
 frac100 were already done. scratch_dino_75k (training, job 1103215) still needs
 `bash scripts/vista/submit_scene500.sh` re-run after it finishes.
 
+### All models on 460 scenes (checked 2026-10-31 on `c642-091`)
+**Finished:** all 18 eval jobs (1107195–1107212) and frac50 (train 1103217, eval 1103218). 23/23 seeds
+present for all 11 models. **Not finished:** scratch_dino_75k.
+
+**75k run (1103215) failed 2026-10-28 at step ~17,960, latest checkpoint 15k.** Try 1: the two nodes'
+`uv run` re-sync raced on the shared `.venv` (`failed to remove directory ... nvidia_cusparselt`),
+exit 2, other node hit a rendezvous timeout. Try 2: the usual NCCL all-reduce hang. The cleanup step
+then quit because the GPU still held 5.8 GB against my 2 GB limit, so tries 3–4 never ran; that
+limit was needlessly strict (training needs ~78 of 95 GB). Eval 1103216 is stuck at
+`DependencyNeverSatisfied`. **Fix:** `uv run --no-sync` in the launcher, limit raised to 10 GB.
+Resubmit (login node): `scancel 1103216; ONLY=scratch_dino_75k bash scripts/vista/submit_matrix.sh`,
+then `bash scripts/vista/submit_scene500.sh` once it has trained. `--no-sync` is untested on a
+real 2-node job until that run.
+
+| Model (step 25k) | Success / 460 | 95% CI | Mean progress | First 100 | New 360 |
+|---|---|---|---|---|---|
+| Parent, no fine-tuning | 141 = **30.7%** | 26.6–35.0 | 0.630 | 33 | 30.0% |
+| Pre-trained + single 12 h (frac100) | 175 = **38.0%** | 33.7–42.6 | 0.734 | 33 | 39.4% |
+| Released put_relative | 157 = **34.1%** | 29.9–38.6 | 0.695 | 39 | 32.8% |
+| Pre-trained + multitask | 146 = **31.7%** | 27.7–36.1 | 0.702 | 32 | 31.7% |
+| Scratch DINOv3 + single | 72 = **15.7%** | 12.6–19.3 | 0.475 | 13 | 16.4% |
+| Scratch random + single | 43 = **9.3%** | 7.0–12.4 | 0.395 | 11 | 8.9% |
+| Scratch DINOv3 + multitask | 49 = **10.7%** | 8.2–13.8 | 0.435 | 12 | 10.3% |
+| Scratch random + multitask | 38 = **8.3%** | 6.1–11.1 | 0.367 | 13 | 6.9% |
+| Pre-trained, 1.21 h (frac10) | 73 = **15.9%** | 12.8–19.5 | 0.508 | 20 | 14.7% |
+| Pre-trained, 3.02 h (frac25) | 106 = **23.0%** | 19.4–27.1 | 0.593 | 30 | 21.1% |
+| Pre-trained, 6.05 h (frac50) | 140 = **30.4%** | 26.4–34.8 | 0.678 | 34 | 29.4% |
+
+Paired, n = 460 (McNemar on success; sign-flip permutation on progress, 5,000 draws):
+| Comparison | Success | McNemar p | Progress diff | Progress p |
+|---|---|---|---|---|
+| parent → frac100 | 141 → 175 | 0.015 | +0.104 | < 0.001 |
+| parent → released | 141 → 157 | 0.28 | +0.065 | 0.004 |
+| released → frac100 | 157 → 175 | 0.21 | +0.040 | 0.050 |
+| parent → 6 h | 141 → 140 | 1.0 | +0.048 | 0.025 |
+| parent → 3 h | 141 → 106 | 0.008 | −0.036 | 0.082 |
+| parent → 1.2 h | 141 → 73 | 2e-8 | −0.122 | < 0.001 |
+| 1.2 h → 3 h | 73 → 106 | 0.003 | +0.086 | < 0.001 |
+| 3 h → 6 h | 106 → 140 | 0.006 | +0.084 | < 0.001 |
+| 6 h → 12 h | 140 → 175 | 0.008 | +0.056 | 0.003 |
+| parent → pre-trained multitask | 141 → 146 | 0.77 | +0.072 | 0.001 |
+| pre-trained multitask → single | 146 → 175 | 0.039 | +0.032 | 0.10 |
+| DINOv3 multitask → single | 49 → 72 | 0.011 | +0.040 | 0.046 |
+| random multitask → single | 38 → 43 | 0.59 | +0.027 | 0.13 |
+| random → DINOv3, single | 43 → 72 | 0.001 | +0.080 | < 0.001 |
+| random → DINOv3, multitask | 38 → 49 | 0.19 | +0.068 | < 0.001 |
+| DINOv3 single → frac100 (pre-training) | 72 → 175 | 5e-16 | +0.259 | < 0.001 |
+| DINOv3 single → parent | 72 → 141 | 7e-9 | +0.155 | < 0.001 |
+| DINOv3 single → 1.2 h | 72 → 73 | 1.0 | +0.033 | 0.11 |
+
+Unadjusted across 18 tests (Bonferroni bar 0.0028). The 5k–20k rows in `matrix_table.csv` are still
+100 scenes; 25k rows are 460. The earlier 100-scene tables above are superseded for 25k.
+

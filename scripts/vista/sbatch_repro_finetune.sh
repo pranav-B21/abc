@@ -93,9 +93,10 @@ for try in $(seq 1 "$MAX_TRIES"); do
   fi
   PORT=$((29500 + try))
   echo "[launch] try $try/$MAX_TRIES: $NNODES node(s) x 1 GPU, rendezvous $HEAD_NODE:$PORT, global batch $((NNODES * 90))"
+  # --no-sync: two nodes re-syncing one shared .venv race and kill the try (1103215, try 1).
   if srun --ntasks-per-node 1 bash -c "
     source vista_env.sh
-    uv run torchrun --nnodes $NNODES --nproc-per-node 1 \
+    uv run --no-sync torchrun --nnodes $NNODES --nproc-per-node 1 \
       --rdzv-id ${SLURM_JOB_ID}_$try --rdzv-backend c10d --rdzv-endpoint $HEAD_NODE:$PORT \
       train.py \
         --cache-root $CACHE_ROOT --output-dir $OUT_DIR \
@@ -107,12 +108,13 @@ for try in $(seq 1 "$MAX_TRIES"); do
   echo "[retry] try $try failed $(date -Is)"
   # A dead try can leave its ranks alive and holding ~78 GB, so the next try OOMs on startup
   # (2026-10-22, jobs 1088039/41). Kill them and wait for the GPU to drain; if it never does,
-  # give up so a resubmission lands on fresh nodes. The [t] keeps pkill off this shell.
+  # give up so a resubmission lands on fresh nodes. The [t] keeps pkill off this shell. Training
+  # needs ~78 GB of 95, so a few GB left behind are harmless (1103215 quit over 5.8 GB at 2 GB).
   timeout 720 srun --overlap --ntasks-per-node 1 bash -c '
     pkill -9 -f "[t]orchrun|[t]rain\.py"
     for i in $(seq 60); do
       m=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | head -1)
-      [ "$m" -lt 2000 ] && exit 0; sleep 10
+      [ "$m" -lt 10000 ] && exit 0; sleep 10
     done
     echo "[fail] $(hostname): GPU still holds ${m} MiB after 10 min"; exit 1
   ' || { echo "[fail] GPU memory not released; resubmit to get fresh nodes"; exit 1; }

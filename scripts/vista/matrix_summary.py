@@ -177,7 +177,9 @@ def main():
         if worlds:
             rate = score(worlds)[2]
             ax.axhline(rate, color=INK2, lw=1, ls="--")
-            ax.text(len(inits) - 0.42, rate + 0.01, f"{txt} ({rate:.2f})", ha="right", va="bottom", fontsize=8, color=INK2)
+            above = r == "put_relative_released"  # the two lines sit close: label one above, one below
+            ax.text(len(inits) - 0.42, rate + (0.01 if above else -0.01), f"{txt} ({rate:.2f})", ha="right",
+                    va="bottom" if above else "top", fontsize=8, color=INK2)
     ax.set_xlim(-0.6, len(inits) - 0.4)
     ax.set_xticks(range(len(inits)), [INIT_LABEL[i] for i in inits])
     ax.set_ylabel("put_relative success rate")
@@ -233,11 +235,13 @@ def main():
         ax.errorbar(hx, [p[3] for p in pts], yerr=[[p[3] - p[4] for p in pts], [p[5] - p[3] for p in pts]],
                     color=INK, lw=1, capsize=3, ls="none")
         for p in pts:
-            ax.text(p[0], p[5] + 0.02, f"{p[1]}/{p[2]}", ha="center", fontsize=8, color=INK)
+            over = parent and p[3] > score(parent)[2]  # keep the label off the parent's dashed line
+            ax.text(p[0], p[5] + 0.02 if over else p[4] - 0.02, f"{p[1]}/{p[2]}", ha="center",
+                    va="bottom" if over else "top", fontsize=8, color=INK)
         if parent:
             rate = score(parent)[2]
             ax.axhline(rate, color=INK2, lw=1, ls="--")
-            ax.text(16, rate + 0.01, f"parent, 0 h of task data ({rate:.2f})", ha="right", fontsize=8, color=INK2)
+            ax.text(0.95, rate + 0.01, f"parent, 0 h of task data ({rate:.2f})", ha="left", fontsize=8, color=INK2)
         ax.set_xscale("log")
         ax.set_xlim(0.9, 17)
         ax.minorticks_off()

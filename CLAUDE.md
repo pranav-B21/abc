@@ -303,7 +303,8 @@ policy has no published reference, and it needs the DINOv3 weights.
 ## Gotchas
 
 - `uv run` sometimes prints `Uninstalled 1 package / Installed 1 package`. That's uv re-syncing the
-  editable `abc-minimal` package, and it's harmless.
+  editable `abc-minimal` package, and it's harmless on one node. Two nodes doing it at once race on the shared
+  `.venv` and kill the run, so multi-node launches use `uv run --no-sync`.
 - The `[warn] --save-video under --rtc` line is expected. Only the timing telemetry includes render
   time; scores are unaffected.
 - `outputs/` (eval results) is gitignored and written inside the repo. Copy anything you want to keep.
