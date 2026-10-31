@@ -471,3 +471,7 @@ down; the episode stops at first success, else at 3,540 steps.
   the target region, capped at 0.99 without success. It can be high from the start if the mover spawns
   nearby, so read it as secondary.
 
+**75k run resubmitted 2026-10-31** from `login1.vista` with `MAX_TRIES=8` (launcher fixes `333cbda`): train 1112501,
+chained 100-scene eval 1112502. Old eval 1103216 cancelled. Resumes from 15k. When trained, run
+`bash scripts/vista/submit_scene500.sh` for the 460-scene evals at 25k/50k/75k.
+
