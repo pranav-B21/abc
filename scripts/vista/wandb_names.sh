@@ -16,6 +16,8 @@ wandb_display_name() {
     repro_mt6_scratch_dino)              echo scratch-dinov3_train-87h_multi6 ;;
     repro_mt6_scratch_rand)              echo scratch-random_train-87h_multi6 ;;
     repro_put_relative_scratch_dino_75k) echo scratch-dinov3_train-12h_single_75k ;;
+    repro_put_relative_ft_lr1e5)         echo pretrained_ft-1.2h_single_lr1e-5 ;;
+    repro_put_relative_ft_vis01)         echo pretrained_ft-1.2h_single_vision-lr0.1 ;;
     put_relative_parent)                 echo pretrained_no-ft ;;
     put_relative_released)               echo released_abc-ft_single ;;
     *)                                   echo "$1" ;;
