@@ -475,3 +475,14 @@ down; the episode stops at first success, else at 3,540 steps.
 chained 100-scene eval 1112502. Old eval 1103216 cancelled. Resumes from 15k. When trained, run
 `bash scripts/vista/submit_scene500.sh` for the 460-scene evals at 25k/50k/75k.
 
+## Fine-tuning-recipe experiment, 1.21 h subset (submitted 2026-11-03)
+- **Why:** Max (2026-11-02) wants better fine-tuning from the 200k parent instead of pre-training. On the
+  1.21 h subset the published recipe scores 15.9% vs the parent's 30.7% (460 scenes).
+- **Launcher:** `scripts/vista/submit_ft_recipe.sh` from `login2.vista` (commit `c5b6885`). Data
+  `$SCRATCH/abc_ft/put_relative_frac10`, 25k steps, ckpt every 5k, `MAX_TRIES=8`, wandb group `ft-recipe`.
+- **Jobs:** frac10 baseline evals at 5k/10k/15k/20k: 1117680–1117683 (18 new seeds each).
+  `ft_lr1e5` (`--optim.learning-rate 1e-5`): train 1117684, evals 1117685–1117689 (5k–25k, 23 seeds each).
+  `ft_vis01` (`--optim.vision-lr-scale 0.1`): train 1117690, evals 1117691–1117695.
+- **Analysis:** `uv run --no-project python scripts/vista/compare_ft_recipes.py`.
+- **Next if a variant wins:** rerun it on the full 12.09 h, the data size Max asked about.
+
