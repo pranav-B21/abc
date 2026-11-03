@@ -214,6 +214,18 @@ My 2026-10-28 predictions were partly wrong: I expected released near 38 (34.1),
 unchanged (it dropped in two columns), and the 1.2 h gap to shrink (it grew, 13 → 15 points).
 A striking tie: pre-trained + 1.2 h (15.9) = scratch DINOv3 + 12 h (15.7).
 
+## 2026-11-02: Max's direction, fine-tune from the base model
+
+Max, after the 460-scene matrix: "if fine-tuning is 12 hours, we will want to focus on how to better
+fine-tune from the base pre-trained models instead of doing any pre-training", and Pranav should
+understand how the diffusion training works. Our data supports the framing: pre-training is worth
+~22 points and is out of reach (gated 3.5k h real data, 12-H200-node recipe), while the fine-tuning
+recipe is untested and hurts below ~6 h of task data. Recipe facts relevant to that, from the code
+(`abc_minimal/dit.py`, `train_loop.py`, `config.py`): rectified-flow loss on 30-step action chunks,
+constant LR 1e-4 after 1k warmup, every parameter trained including DINOv3 (`vision_lr_scale`
+defaults to 1.0 and our launcher never sets it; the paper's pre-training used 0.1), CLIP text frozen,
+no EMA, no early stopping. What ABC used for vision LR in its published sim fine-tunes is unconfirmed.
+
 ## Open items
 - [x] Review and commit the sweep scripts (`c0ff182`).
 - [x] Submit the sweep (jobs 1056467–1056476, 2026-10-07). Next: collect results into `RUNS.md`.

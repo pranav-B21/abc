@@ -465,8 +465,8 @@ directive ("put the mug to the left of the apple"; of 460: right 142, left 139, 
 Success = mover within 6–30 cm along the directive axis of the reference, within 8 cm off-axis, and set
 down; the episode stops at first success, else at 3,540 steps.
 - **11 of the 460 scenes start already solved** (the same 11 for every model, success at step 1), a free
-  2.4 points in every rate. Excluding them: parent 29.0%, frac100 36.5%, scratch DINOv3 13.0%, scratch
-  random 7.1%. Paired tests are unaffected (these scenes are ties).
+  2.4 points in every rate. Excluding them (the same 11 for every model): parent 29.0%, frac100 36.5%, scratch DINOv3
+  13.6%, scratch random 7.1%. Paired tests are unaffected (these scenes are ties).
 - **`max_reward` ("progress") is closeness, not task stages:** best-ever `1 - gap / 0.25 m` from mover to
   the target region, capped at 0.99 without success. It can be high from the start if the mover spawns
   nearby, so read it as secondary.
