@@ -37,13 +37,16 @@ CKPT_EVERY=${CKPT_EVERY:-5000}
 #   checked against the cache root below, because train.py silently falls back to random.
 #   Needs <cache-root>/norm_stats.json (make_matrix_roots.py writes the parent's stats there).
 INIT=${INIT:-pretrained}
+# EXTRA_ARGS: extra train.py flags appended last, for fine-tuning-recipe variants, e.g.
+#   EXTRA_ARGS="--optim.learning-rate 1e-5" or "--optim.vision-lr-scale 0.1". Keep TAG distinct per variant.
+EXTRA_ARGS=${EXTRA_ARGS:-}
 VISION=${VISION:-dinov3}
 RUN=repro_${TASK}_${TAG}
 CACHE_ROOT=${CACHE_ROOT:-/scratch/11138/pranavbelligundu/abc_ft/$TASK}   # one task per cache root (sim_task preset)
 OUT_DIR=/scratch/11138/pranavbelligundu/abc_runs/$RUN
 mkdir -p "$CACHE_ROOT" "$OUT_DIR"
 
-echo "[job] $(date -Is) nodes=$SLURM_JOB_NODELIST task=$TASK run=$RUN"
+echo "[job] $(date -Is) nodes=$SLURM_JOB_NODELIST task=$TASK run=$RUN extra=[$EXTRA_ARGS]"
 
 # 1. Data + parent (idempotent: prepare.py skips what is already present).
 # SKIP_PREPARE=1 for a data-scale subset root (make_data_subsets.py): prepare.py would
@@ -103,7 +106,7 @@ for try in $(seq 1 "$MAX_TRIES"); do
         ${START[*]} --mixture-preset sim_task \
         --flow.max-action-prefix 8 --train-steps $TRAIN_STEPS \
         --val-every $CKPT_EVERY --val-batches 40 --ckpt-every $CKPT_EVERY \
-        --log-wandb --wandb-project abc-vista
+        --log-wandb --wandb-project abc-vista $EXTRA_ARGS
   "; then break; fi
   echo "[retry] try $try failed $(date -Is)"
   # A dead try can leave its ranks alive and holding ~78 GB, so the next try OOMs on startup
