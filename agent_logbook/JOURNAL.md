@@ -230,6 +230,7 @@ no EMA, no early stopping. What ABC used for vision LR in its published sim fine
 - [ ] First fine-tuning-recipe experiment (prepared 2026-11-02): `submit_ft_recipe.sh` trains 1.21 h
   subset at LR 1e-5 (`ft_lr1e5`) and at vision-LR scale 0.1 (`ft_vis01`), evaluates every checkpoint of
   both plus frac10's 5k–20k on 460 scenes (16 jobs). Not yet submitted. Analysis: `compare_ft_recipes.py`.
+  Explainer and plan for Max: https://claude.ai/artifact/Xz1Ga6xLn3R7tfJ2pxfoVs ("How ABC-DiT Trains").
 - [x] Review and commit the sweep scripts (`c0ff182`).
 - [x] Submit the sweep (jobs 1056467–1056476, 2026-10-07). Next: collect results into `RUNS.md`.
 - [x] 2×2 matrix submitted 2026-10-18 (jobs 1079137–1079157). 3/9 trained; results in RUNS.md (2026-10-21).
