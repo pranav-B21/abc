@@ -475,6 +475,10 @@ down; the episode stops at first success, else at 3,540 steps.
 chained 100-scene eval 1112502. Old eval 1103216 cancelled. Resumes from 15k. When trained, run
 `bash scripts/vista/submit_scene500.sh` for the 460-scene evals at 25k/50k/75k.
 
+**75k run (1112501) finished 2026-11-02 05:02 after 7 of 8 tries** (10 h 47 min; 6 hangs, about one every 1.5 h): the in-allocation retry, `--no-sync`
+and the 10 GB drain limit all held. Chained 100-scene eval 1112502 queued. Still to submit:
+`ONLY=dino75k bash scripts/vista/submit_scene500.sh` for 460 scenes at 25k/50k/75k.
+
 ## Fine-tuning-recipe experiment, 1.21 h subset (submitted 2026-11-03)
 - **Why:** Max (2026-11-02) wants better fine-tuning from the 200k parent instead of pre-training. On the
   1.21 h subset the published recipe scores 15.9% vs the parent's 30.7% (460 scenes).
