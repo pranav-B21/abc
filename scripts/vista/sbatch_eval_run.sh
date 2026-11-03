@@ -62,6 +62,6 @@ for step in $STEPS; do
 done
 
 uv run python scripts/vista/log_eval_wandb.py --root "$OUT_ROOT" \
-  --name "$EVAL_WANDB_NAME" --group repro-finetune \
+  --name "$EVAL_WANDB_NAME" --group eval \
   || echo "[warn] wandb logging failed; results are still in $OUT_ROOT"
 echo "[job] done $(date -Is)"

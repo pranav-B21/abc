@@ -507,3 +507,9 @@ runs not in the map keep their run-dir name (and `eval-<run dir>` for tests).
 | `put_relative_parent` / `put_relative_released` (test only) | `eval_pretrained_no-ft` / `eval_released_abc-ft_single` |
 
 The matrix page lists each run with its experiment, what it tests, its test scenes and this name.
+
+**W&B groups (2026-11-02):** every run is now in group `training` (11 runs) or `eval` (38 runs, incl. the
+2026-10-07 baseline eval). The old groups `matrix` / `repro-finetune` survive as tags on the training runs.
+Launchers now set group `training` (training) or `eval` (both eval scripts) and put `WANDB_GROUP` (the
+experiment family, e.g. `ft-recipe`) in `WANDB_TAGS`. Slurm copies a batch script at submission, so jobs queued
+before this change keep their old group until regrouped by hand.

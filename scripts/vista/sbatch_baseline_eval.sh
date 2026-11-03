@@ -96,6 +96,6 @@ for d in sorted(root.glob("*_seed*")):
           f"{s.get('mean_max_progress', float('nan')):9.2f}  {published.get(key, '')}")
 EOF
 uv run python scripts/vista/log_eval_wandb.py --root "$OUT_ROOT" \
-  --name "baseline-eval-${SLURM_JOB_ID:-local}" --group baseline-released \
+  --name "baseline-eval-${SLURM_JOB_ID:-local}" --group eval \
   || echo "[warn] wandb logging failed; results are still in $OUT_ROOT"
 echo "[job] done $(date -Is)"
