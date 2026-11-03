@@ -37,6 +37,9 @@ declare -A SIM_TASK=(
 EVAL_TASK=${EVAL_TASK:-${SIM_TASK[$TASK]:-$TASK}}
 PROMPT=${PROMPT:-${TASK//_/ }}
 LABEL=$(basename "$RUN_DIR")
+source scripts/vista/wandb_names.sh
+WB_DISPLAY_NAME=$(wandb_display_name "$LABEL")
+[ "$WB_DISPLAY_NAME" = "$LABEL" ] && EVAL_WANDB_NAME="eval-$LABEL" || EVAL_WANDB_NAME="eval_$WB_DISPLAY_NAME"
 
 STEPS=${STEPS:-$(ls "$RUN_DIR" | sed -nE 's/^([0-9]+)\.pt$/\1/p' | sort -n | tr '\n' ' ')}
 echo "[job] $(hostname) $(date -Is) run=$LABEL task=$EVAL_TASK prompt='$PROMPT' steps=[$STEPS]"
@@ -59,6 +62,6 @@ for step in $STEPS; do
 done
 
 uv run python scripts/vista/log_eval_wandb.py --root "$OUT_ROOT" \
-  --name "eval-$LABEL" --group repro-finetune \
+  --name "$EVAL_WANDB_NAME" --group repro-finetune \
   || echo "[warn] wandb logging failed; results are still in $OUT_ROOT"
 echo "[job] done $(date -Is)"

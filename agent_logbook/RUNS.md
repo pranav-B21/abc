@@ -490,3 +490,20 @@ and the 10 GB drain limit all held. Chained 100-scene eval 1112502 queued. Still
 - **Analysis:** `uv run --no-project python scripts/vista/compare_ft_recipes.py`.
 - **Next if a variant wins:** rerun it on the full 12.09 h, the data size Max asked about.
 
+
+**W&B display names (renamed 2026-11-02, 48 runs in `abc-vista`).** Format `<start>_<training>_<task mix>`;
+run IDs (= run dir names) are unchanged, so links and resumes still work. Test runs are `eval_` + the name.
+`scripts/vista/wandb_names.sh` holds the map and both launchers use it, so a resume keeps the new name;
+runs not in the map keep their run-dir name (and `eval-<run dir>` for tests).
+
+| Run dir / W&B run ID | Display name |
+|---|---|
+| `repro_sim_put_the_plastic_bottles_in_the_bin_recipe` | `pretrained_ft-49h_single_bottles` |
+| `repro_put_relative_frac100` / `frac50` / `frac25` / `frac10` | `pretrained_ft-12h_single` / `-6h_` / `-3h_` / `-1.2h_single` |
+| `repro_mt6_pretrained` | `pretrained_ft-87h_multi6` |
+| `repro_put_relative_scratch_dino` / `_rand` | `scratch-dinov3_train-12h_single` / `scratch-random_train-12h_single` |
+| `repro_mt6_scratch_dino` / `_rand` | `scratch-dinov3_train-87h_multi6` / `scratch-random_train-87h_multi6` |
+| `repro_put_relative_scratch_dino_75k` | `scratch-dinov3_train-12h_single_75k` |
+| `put_relative_parent` / `put_relative_released` (test only) | `eval_pretrained_no-ft` / `eval_released_abc-ft_single` |
+
+The matrix page lists each run with its experiment, what it tests, its test scenes and this name.

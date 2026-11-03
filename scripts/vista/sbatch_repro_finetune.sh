@@ -75,7 +75,8 @@ elif [ "$INIT" != pretrained ]; then
 fi
 
 # 3. wandb: one run per RUN, resumed across re-submissions so the curve stays continuous.
-export WANDB_PROJECT=abc-vista WANDB_NAME=$RUN WANDB_RUN_GROUP=${WANDB_GROUP:-repro-finetune}
+source scripts/vista/wandb_names.sh
+export WANDB_PROJECT=abc-vista WANDB_NAME=$(wandb_display_name "$RUN") WANDB_RUN_GROUP=${WANDB_GROUP:-repro-finetune}
 export WANDB_RUN_ID=$(echo "$RUN" | tr -c 'a-zA-Z0-9_\n-' '-') WANDB_RESUME=allow
 
 HEAD_NODE=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -1)
