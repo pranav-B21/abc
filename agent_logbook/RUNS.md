@@ -513,3 +513,7 @@ The matrix page lists each run with its experiment, what it tests, its test scen
 Launchers now set group `training` (training) or `eval` (both eval scripts) and put `WANDB_GROUP` (the
 experiment family, e.g. `ft-recipe`) in `WANDB_TAGS`. Slurm copies a batch script at submission, so jobs queued
 before this change keep their old group until regrouped by hand.
+`scripts/vista/wandb_regroup.py` does that regrouping (dry run by default, `--apply` to write). The 16
+fine-tuning-recipe jobs (1117680–1117695) were queued with the old scripts, so they will log as
+`repro_put_relative_ft_*` / `eval-repro_put_relative_*` in groups `ft-recipe` / `repro-finetune`:
+run `wandb_regroup.py --apply` once they finish. Dry run on 2026-11-03: 0 runs to change.
