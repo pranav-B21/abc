@@ -517,3 +517,8 @@ before this change keep their old group until regrouped by hand.
 fine-tuning-recipe jobs (1117680–1117695) were queued with the old scripts, so they will log as
 `repro_put_relative_ft_*` / `eval-repro_put_relative_*` in groups `ft-recipe` / `repro-finetune`:
 run `wandb_regroup.py --apply` once they finish. Dry run on 2026-11-03: 0 runs to change.
+
+**75k run on 460 scenes, submitted 2026-11-15** from `login1.vista`: jobs 1145711 (seeds 20260611..20260791)
+and 1145712 (20260811..20260991), 1 node, 14 h each; steps 25k/50k/75k, 27 evals per job. The 100-scene evals
+(job 1112502) were already done. W&B: these log as `eval_scratch-dinov3_train-12h_single_75k` in group `eval`.
+
