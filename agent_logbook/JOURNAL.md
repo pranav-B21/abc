@@ -226,6 +226,14 @@ constant LR 1e-4 after 1k warmup, every parameter trained including DINOv3 (`vis
 defaults to 1.0 and our launcher never sets it; the paper's pre-training used 0.1), CLIP text frozen,
 no EMA, no early stopping. What ABC used for vision LR in its published sim fine-tunes is unconfirmed.
 
+## 2026-11-15: research direction, principled latent actions
+
+The ABC work now feeds a wider project: learning robot policies from human egocentric video with
+DreamDojo latent actions, using ABC as the robot-side testbed. The plan, stages and logbook live in
+`/work/11138/pranavbelligundu/vista/principled_latent_actions/` (page: https://claude.ai/artifact/W592NG6118aDgB2wg95NzX).
+From this logbook it uses: the 460-scene matrix and data-scale curve (Stage 0) and the fine-tuning-recipe
+runs (Stage 4). Results of those stay logged here.
+
 ## Open items
 - [ ] First fine-tuning-recipe experiment (submitted 2026-11-03, jobs 1117680–1117695): `submit_ft_recipe.sh` trains 1.21 h
   subset at LR 1e-5 (`ft_lr1e5`) and at vision-LR scale 0.1 (`ft_vis01`), evaluates every checkpoint of
