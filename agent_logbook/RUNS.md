@@ -550,3 +550,13 @@ and it is still rising at 75k; it stays below even the parent with no task data.
 (13.3%) and the original 25k run (15.7%) share a config and differ by 2.4 points (p = 0.27): a first, rough read
 of retraining variance. Withdraws the 2026-10-26 guess that flat 5k–25k curves meant more steps would not help.
 
+## Fine-tuning recipe, round 2 (submitted 2026-11-19)
+- **Launcher:** `scripts/vista/submit_ft_recipe2.sh` from `login2.vista` (commit `9d6381b`). Analysis:
+  `source vista_env.sh && uv run --no-sync python scripts/vista/compare_ft_recipes2.py`. W&B tag `ft-recipe2`.
+- **Pre-registered stopping rule:** per run, the checkpoint with the lowest val_loss is the result.
+- **Jobs (train → 460-scene evals, one per checkpoint):**
+  `ft2_lr1e5_es` (1.21 h, LR 1e-5, 10k steps, ckpt 1k) 1155327 → 1155328–1155337 (1k–10k);
+  `ft2_lr3e6` (1.21 h, LR 3e-6) 1155338 → 1155339–1155343 (5k–25k);
+  `ft2_lr1e5_3h` 1155344 → 1155345–47 (5k/15k/25k); `ft2_lr1e5_6h` 1155348 → 1155349–51;
+  `ft2_lr1e5_12h` 1155352 → 1155353–55. Disk ~720 GB; prune unselected checkpoints after the analysis.
+
