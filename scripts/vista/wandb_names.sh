@@ -18,6 +18,11 @@ wandb_display_name() {
     repro_put_relative_scratch_dino_75k) echo scratch-dinov3_train-12h_single_75k ;;
     repro_put_relative_ft_lr1e5)         echo pretrained_ft-1.2h_single_lr1e-5 ;;
     repro_put_relative_ft_vis01)         echo pretrained_ft-1.2h_single_vision-lr0.1 ;;
+    repro_put_relative_ft2_lr1e5_es)     echo pretrained_ft-1.2h_single_lr1e-5_ckpt1k ;;
+    repro_put_relative_ft2_lr3e6)        echo pretrained_ft-1.2h_single_lr3e-6 ;;
+    repro_put_relative_ft2_lr1e5_3h)     echo pretrained_ft-3h_single_lr1e-5 ;;
+    repro_put_relative_ft2_lr1e5_6h)     echo pretrained_ft-6h_single_lr1e-5 ;;
+    repro_put_relative_ft2_lr1e5_12h)    echo pretrained_ft-12h_single_lr1e-5 ;;
     put_relative_parent)                 echo pretrained_no-ft ;;
     put_relative_released)               echo released_abc-ft_single ;;
     *)                                   echo "$1" ;;
