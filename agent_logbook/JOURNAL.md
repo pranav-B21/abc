@@ -234,6 +234,21 @@ DreamDojo latent actions, using ABC as the robot-side testbed. The plan, stages 
 From this logbook it uses: the 460-scene matrix and data-scale curve (Stage 0) and the fine-tuning-recipe
 runs (Stage 4). Results of those stay logged here.
 
+## 2026-11-19: fine-tuning recipe and 75k results
+
+**Recipe (1.21 h subset).** The published recipe (LR 1e-4) is worse than no fine-tuning from the first checkpoint
+and keeps falling (22.0% → 15.9%). LR 1e-5 cuts the damage (23.9–32.4%, +37 to +48 scenes over the published
+recipe) and at 5k ties the parent (32.4% vs 30.7%), but from 10k on it is below the parent. Slowing only the
+vision encoder does nothing. So the harm comes from moving the action network too far on too little data,
+and the fix is a gentler and shorter fine-tune. None beats no fine-tuning at 1.21 h yet. Next candidates:
+LR 1e-5 with early stopping chosen on validation (not on the test scenes), LR 1e-6, or mixing in data the
+parent already knew.
+
+**75k.** 23.0% at 75k vs 15.7% at 25k (p = 0.002), still climbing; still below the parent (30.7%). My
+2026-10-26 reading that flat early curves meant more steps would not help was wrong. The pre-training gap is
+partly a compute gap at this scale. The 25k checkpoint of this run vs the original 25k run (13.3% vs 15.7%,
+same config) gives a first retraining-variance read of ~2–3 points.
+
 ## Open items
 - [ ] First fine-tuning-recipe experiment (submitted 2026-11-03, jobs 1117680–1117695): `submit_ft_recipe.sh` trains 1.21 h
   subset at LR 1e-5 (`ft_lr1e5`) and at vision-LR scale 0.1 (`ft_vis01`), evaluates every checkpoint of

@@ -489,6 +489,21 @@ and the 10 GB drain limit all held. Chained 100-scene eval 1112502 queued. Still
   `ft_vis01` (`--optim.vision-lr-scale 0.1`): train 1117690, evals 1117691–1117695.
 - **Analysis:** `uv run --no-project python scripts/vista/compare_ft_recipes.py`.
 - **Next if a variant wins:** rerun it on the full 12.09 h, the data size Max asked about.
+- **Results (checked 2026-11-19 on `c642-071`; all 460 scenes, all steps; McNemar):**
+
+| Recipe on 1.21 h | 5k | 10k | 15k | 20k | 25k |
+|---|---|---|---|---|---|
+| Published (LR 1e-4, all params) | 22.0% | 21.5% | 16.3% | 15.9% | 15.9% |
+| `ft_lr1e5` (LR 1e-5, all params) | **32.4%** | 24.6% | 25.2% | 24.1% | 23.9% |
+| `ft_vis01` (LR 1e-4, vision 1e-5) | 23.0% | 18.0% | 16.3% | 13.7% | 17.2% |
+
+  Parent, no fine-tuning: 30.7%. The published recipe is already worse than the parent at 5k (p = 0.002) and
+  keeps falling. LR 1e-5 is better than the published recipe at every step but 10k (+37 to +48 scenes,
+  p ≤ 4e-4) and at 5k ties the parent (32.4% vs 30.7%, p = 0.58); from 10k on it is below the parent
+  (p = 0.01–0.05). Slowing only the vision encoder changes nothing (p ≥ 0.17 vs published at every step).
+  So the damage comes from how far the action network moves, not from the vision encoder, and a gentler,
+  shorter fine-tune avoids it but does not yet beat no fine-tuning. Caveats: 5k is the best of 5 checkpoints
+  read on the test scenes, so its tie is optimistic; one run per recipe.
 
 
 **W&B display names (renamed 2026-11-02, 48 runs in `abc-vista`).** Format `<start>_<training>_<task mix>`;
@@ -516,9 +531,22 @@ before this change keep their old group until regrouped by hand.
 `scripts/vista/wandb_regroup.py` does that regrouping (dry run by default, `--apply` to write). The 16
 fine-tuning-recipe jobs (1117680–1117695) were queued with the old scripts, so they will log as
 `repro_put_relative_ft_*` / `eval-repro_put_relative_*` in groups `ft-recipe` / `repro-finetune`:
-run `wandb_regroup.py --apply` once they finish. Dry run on 2026-11-03: 0 runs to change.
+run `wandb_regroup.py --apply` once they finish. Dry run on 2026-11-03: 0 runs to change. Applied 2026-11-19: 17 runs regrouped and renamed (`pretrained_ft-1.2h_single_lr1e-5`, `..._vision-lr0.1`, plus their `eval_` runs).
 
 **75k run on 460 scenes, submitted 2026-11-15** from `login1.vista`: jobs 1145711 (seeds 20260611..20260791)
 and 1145712 (20260811..20260991), 1 node, 14 h each; steps 25k/50k/75k, 27 evals per job. The 100-scene evals
 (job 1112502) were already done. W&B: these log as `eval_scratch-dinov3_train-12h_single_75k` in group `eval`.
+
+**75k run results (checked 2026-11-19 on `c642-071`; jobs 1145711/12 done 2026-11-17; 460 scenes, McNemar):**
+
+| `repro_put_relative_scratch_dino_75k` | Success | 95% CI | vs 25k DINOv3 run (15.7%) | vs parent (30.7%) | vs pre-trained + 12 h (38.0%) |
+|---|---|---|---|---|---|
+| 25k | 13.3% | 10.5–16.7 | p = 0.27 | p = 1e-11 | p = 8e-19 |
+| 50k | 17.0% | 13.8–20.7 | p = 0.62 | p = 9e-8 | p = 1e-14 |
+| 75k | **23.0%** | 19.4–27.1 | **p = 0.002** | p = 0.010 | p = 9e-8 |
+
+3× more steps lifts DINOv3-from-scratch from 15.7% to 23.0%, closing about a third of the gap to pre-trained + 12 h,
+and it is still rising at 75k; it stays below even the parent with no task data. The 25k checkpoint of this run
+(13.3%) and the original 25k run (15.7%) share a config and differ by 2.4 points (p = 0.27): a first, rough read
+of retraining variance. Withdraws the 2026-10-26 guess that flat 5k–25k curves meant more steps would not help.
 
